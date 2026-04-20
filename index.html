@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Wordle Solver</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+ background: #121213;
+ color: #fff;
+ font-family: 'Courier New', Courier, monospace;
+ min-height: 100vh;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ padding: 24px 16px 60px;
+}
+
+.eyebrow { font-size: 9px; letter-spacing: 6px; color: #3a3a3a; text-transform: uppercase; margin-bottom: 4px; }
+h1 { font-size: clamp(22px, 5vw, 30px); font-weight: 900; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 4px; }
+.word-count { font-size: 10px; color: #3a3a3a; letter-spacing: 1px; margin-bottom: 22px; }
+
+.instructions {
+ background: #1a1a1b; border: 1px solid #2a2a2c; border-radius: 10px;
+ padding: 14px 18px; margin-bottom: 24px; width: 100%; max-width: 340px;
+ font-size: 12px; color: #888; line-height: 1.85;
+}
+.instructions .lbl { color: #ccc; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.color-legend { display: flex; gap: 8px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
+.pip { border-radius: 3px; padding: 2px 8px; font-size: 10px; color: #fff; display: inline-block; }
+.pip.gray   { background: #555558; }
+.pip.yellow { background: #b59f3b; }
+.pip.green  { background: #538d4e; }
+.arr { color: #333; font-size: 11px; }
+
+/* ── Tile row ── */
+.tile-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+.tile {
+ width: 56px; height: 56px; border-radius: 7px;
+ border: 2px solid #565758; background: #3a3a3c;
+ display: flex; align-items: center; justify-content: center;
+ position: relative; flex-shrink: 0;
+ transition: background 0.12s, border-color 0.12s;
+ /* iOS: ensure touch events reach the tile not just the input */
+ touch-action: manipulation;
+}
+.tile.g  { background: #538d4e; border-color: #538d4e; }
+.tile.y  { background: #b59f3b; border-color: #b59f3b; }
+.tile.gr { background: #555558; border-color: #555558; }
+
+/*
+ Key iOS fix: we use a hidden real input for each tile but display
+ a visible letter div on top. The input is invisible but focusable.
+*/
+.tile input {
+ position: absolute;
+ inset: 0;
+ width: 100%;
+ height: 100%;
+ opacity: 0;           /* invisible but present and focusable */
+ border: none;
+ outline: none;
+ background: transparent;
+ font-size: 16px;      /* prevents iOS zoom on focus */
+ cursor: pointer;
+ -webkit-appearance: none;
+ border-radius: 0;
+ caret-color: transparent;
+ color: transparent;
+ z-index: 2;
+}
+
+.tile-letter {
+ position: absolute;
+ inset: 0;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 26px;
+ font-weight: 900;
+ color: #fff;
+ text-transform: uppercase;
+ pointer-events: none;
+ z-index: 1;
+ /* blinking cursor effect when empty and focused */
+}
+.tile.focused .tile-letter::after {
+ content: '|';
+ opacity: 1;
+ animation: blink 1s step-end infinite;
+}
+.tile.focused.has-letter .tile-letter::after { display: none; }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.tap-hint {
+ font-size: 10px; color: #2e2e2e; letter-spacing: 1px;
+ text-transform: uppercase; margin-bottom: 20px; height: 14px;
+ text-align: center;
+}
+
+/* ── Buttons ── */
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
+
+button {
+ font-family: inherit; font-size: 12px; font-weight: 700;
+ letter-spacing: 2px; text-transform: uppercase;
+ border: none; border-radius: 7px; padding: 12px 20px;
+ cursor: pointer;
+ /* iOS: prevent double-tap zoom and ensure touch events fire */
+ touch-action: manipulation;
+ -webkit-appearance: none;
+ user-select: none;
+ -webkit-user-select: none;
+}
+button:active { opacity: 0.7; }
+
+#btn-add        { background: #1c1c1d; color: #333; }
+#btn-add.active { background: #538d4e; color: #fff; }
+#btn-solve      { background: #b59f3b; color: #fff; display: none; }
+#btn-reset      { background: transparent; color: #444; border: 1px solid #2a2a2c; display: none; }
+
+/* ── Guesses ── */
+#guesses-sec { width: 100%; max-width: 340px; margin-bottom: 24px; display: none; }
+.sec-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+.sec-label.g   { color: #538d4e; }
+.sec-label.y   { color: #b59f3b; }
+.sec-label.dim { color: #333; }
+
+.guess-row { display: flex; gap: 5px; margin-bottom: 7px; align-items: center; }
+.mt {
+ width: 42px; height: 42px; border-radius: 5px;
+ display: flex; align-items: center; justify-content: center;
+ font-size: 20px; font-weight: 900; text-transform: uppercase;
+ color: #fff; flex-shrink: 0;
+}
+.mt.g  { background: #538d4e; }
+.mt.y  { background: #b59f3b; }
+.mt.gr { background: #555558; }
+.mt.e  { background: #3a3a3c; }
+
+.rm-btn {
+ background: transparent; border: none; color: #444;
+ font-size: 24px; padding: 0 8px; cursor: pointer;
+ touch-action: manipulation; -webkit-appearance: none;
+ font-weight: 300; line-height: 1;
+ user-select: none; -webkit-user-select: none;
+}
+
+/* ── Results ── */
+#results-sec { width: 100%; max-width: 340px; }
+.res-group { margin-bottom: 22px; }
+.res-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.match-ct { font-size: 9px; color: #333; }
+.word-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.chip {
+ border-radius: 5px; padding: 7px 12px;
+ font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+}
+.chip.common     { background: #1a1a1b; border: 1px solid #252525; color: #ccc; }
+.chip.common.top { background: #1b2e1b; border-color: #538d4e; color: #6abf69; }
+.chip.rare       { background: #1c1a10; border: 1px solid #2a2510; color: #a08830; }
+.star { font-size: 8px; margin-left: 4px; color: #538d4e; }
+.no-match { font-size: 11px; color: #e74c3c; }
+
+@media (min-width: 500px) {
+ .tile { width: 62px; height: 62px; }
+ .tile-letter { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<div class="eyebrow">algorithmic</div>
+<h1>Wordle Solver</h1>
+<div class="word-count" id="wc"></div>
+
+<div class="instructions">
+ <div class="lbl">HOW TO USE</div>
+ <div>&#x2460; Tap a box and type your guess</div>
+ <div>&#x2461; <span style="color:#b59f3b;font-weight:700">Tap a filled tile</span> to cycle colour</div>
+ <div class="color-legend">
+   <span class="pip gray">gray</span><span class="arr">&#8594;</span>
+   <span class="pip yellow">yellow</span><span class="arr">&#8594;</span>
+   <span class="pip green">green</span>
+ </div>
+ <div>&#x2462; Tap <span style="color:#538d4e;font-weight:700">Add Guess</span>, then <span style="color:#b59f3b;font-weight:700">Solve</span></div>
+</div>
+
+<!-- Tiles -->
+<div class="tile-row" id="tile-row">
+ <div class="tile" id="t0"><input id="i0" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l0"></div></div>
+ <div class="tile" id="t1"><input id="i1" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l1"></div></div>
+ <div class="tile" id="t2"><input id="i2" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l2"></div></div>
+ <div class="tile" id="t3"><input id="i3" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l3"></div></div>
+ <div class="tile" id="t4"><input id="i4" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l4"></div></div>
+</div>
+
+<div class="tap-hint" id="hint"></div>
+
+<div class="btn-row">
+ <button id="btn-add">+ Add Guess</button>
+ <button id="btn-solve">Solve &#8594;</button>
+ <button id="btn-reset">Reset</button>
+</div>
+
+<div id="guesses-sec">
+ <div class="sec-label dim">Guesses</div>
+ <div id="g-list"></div>
+</div>
+
+<div id="results-sec"></div>
+
+<script>
+// ── Word lists ───────────────────────────────────────────────────────────────
+const COMMON_RAW=`ABACK ABATE ABHOR ABIDE ABODE ABORT ABOUT ABOVE ABUSE ABUZZ ABYSS ACORN ACRID ACTOR ACUTE ADAGE ADAPT ADEPT ADMIT ADOBE ADOPT ADORE ADORN ADULT AEGIS AFOOT AFOUL AFTER AGAIN AGENT AGILE AGING AGONY AGREE AHEAD AIOLI AISLE ALARM ALBUM ALERT ALGAE ALIAS ALIBI ALIEN ALIGN ALIKE ALIVE ALLAY ALLEY ALLOW ALLOY ALOFT ALONE ALONG ALOOF ALOUD ALPHA ALTAR ALTER AMASS AMAZE AMBER AMBLE AMEND AMINO AMISS AMONG AMPLE AMPLY AMUSE ANGEL ANGER ANGLE ANGRY ANGST ANIME ANISE ANKLE ANNEX ANNOY ANNUL ANTIC ANTSY ANVIL AORTA APACE APART APNEA APPLE APPLY APRON APTLY ARENA ARGUE ARISE ARMED ARMOR AROMA AROSE ARRAY ARROW ARSON ARTSY ASHEN ASIDE ASKEW ASSET ATONE ATTIC AUDIO AUDIT AURAL AVAIL AVERT AVIAN AVOID AWAIT AWAKE AWARD AWARE AWASH AWFUL AWOKE AXIOM AZURE BACON BADGE BADLY BAGEL BAGGY BAKED BAKER BALKY BALMY BANAL BANJO BARGE BARON BASIC BASIL BASIN BASIS BASTE BATCH BATHE BATON BAWDY BEACH BEARD BEAST BEBOP BEECH BEEFY BEGAN BEGIN BEGUN BEIGE BEING BELCH BELIE BELLE BELLY BELOW BENCH BERET BERRY BERTH BESET BIGOT BIKER BINGE BINGO BIRCH BIRTH BISON BLACK BLADE BLAME BLAND BLANK BLARE BLASE BLAST BLAZE BLEAK BLEED BLEND BLESS BLIND BLING BLINK BLISS BLITZ BLOAT BLOCK BLOND BLOOD BLOOM BLOWN BLUFF BLUNT BLURB BLURT BLUSH BOARD BOAST BOGEY BOGUS BONUS BOOST BOOTH BOOZE BOOZY BORED BORNE BOSOM BOSSY BOTCH BOUND BOWEL BOXER BRACE BRAID BRAIN BRAKE BRAND BRASH BRASS BRAVE BRAVO BRAWL BRAWN BREAD BREAK BREED BRIBE BRICK BRIDE BRIEF BRINE BRING BRINK BRINY BRISK BROAD BROIL BROKE BROOD BROOK BROOM BROTH BROWN BRUNT BRUSH BRUTE BUDDY BUDGE BUGGY BUGLE BUILD BUILT BULGE BULKY BULLY BUMPY BUNCH BUNNY BURLY BURNT BURST BUSHY BUYER BUZZY CABAL CABIN CABLE CACHE CADET CADRE CAGEY CAMEL CAMEO CAMPY CANAL CANDY CANNY CANOE CANON CAPER CARGO CARRY CARTE CARVE CASTE CATCH CATER CAULK CAUSE CEASE CEDAR CELLO CHAFE CHAIN CHAIR CHALK CHAMP CHANT CHAOS CHARD CHARM CHART CHASE CHASM CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHEWY CHICK CHIEF CHILD CHILE CHILI CHILL CHIME CHIMP CHINA CHIRP CHIVE CHOIR CHOKE CHORD CHORE CHOSE CHUNK CHURN CHUTE CIDER CIGAR CINCH CIRCA CIVIC CIVIL CLAIM CLAMP CLANG CLANK CLASH CLASP CLASS CLEAN CLEAR CLEFT CLERK CLICK CLIFF CLIMB CLING CLINK CLOAK CLOCK CLONE CLOSE CLOTH CLOUD CLOUT CLOVE CLOWN CLUMP CLUNG COACH COAST COBRA COCKY COCOA CODER COLON COLOR COMBO COMET COMFY COMIC COMMA CONDO CONGA CORAL CORNY CORPS COUCH COUGH COULD COUNT COUPE COURT COVER COVET COWER COYLY CRACK CRAFT CRAMP CRANE CRANK CRASH CRASS CRATE CRAVE CRAWL CRAZE CRAZY CREAM CREDO CREED CREEK CREEP CREME CREPE CREPT CREST CRIED CRIME CRIMP CRISP CROAK CROCK CRONY CROOK CROON CROSS CROWD CROWN CRUDE CRUEL CRUMB CRUSH CRUST CRYPT CUBIC CUMIN CURLY CURRY CURSE CURVE CURVY CUSHY CYBER CYCLE CYNIC DADDY DAFFY DAILY DAIRY DAISY DANCE DANDY DEALT DEATH DEBIT DEBUT DECAY DECOR DECOY DECRY DEFER DEITY DELAY DELTA DELVE DEMON DENIM DENSE DEPOT DEPTH DERBY DETER DETOX DEVIL DIARY DICEY DIGIT DIMLY DINER DINGY DIRTY DISCO DITCH DITTY DIVER DIZZY DODGE DODGY DOGMA DOING DOMED DONOR DONUT DOPEY DOUBT DOUGH DOUSE DOWDY DOZEN DRAFT DRAIN DRAMA DRANK DRAPE DRAWL DRAWN DREAD DREAM DRESS DRIED DRIER DRIFT DRILL DRINK DRIVE DROLL DRONE DROOL DROOP DROVE DROWN DRUNK DRYER DRYLY DUMMY DUSKY DUSTY DWARF DWELL DYING EAGER EAGLE EARLY EARTH EASEL EATEN EATER EBONY EDICT EERIE EIGHT EJECT ELBOW ELDER ELECT ELEGY ELITE ELUDE EMAIL EMBED EMBER EMOJI EMPTY ENACT ENDOW ENEMY ENJOY ENNUI ENSUE ENTER ENTRY ENVOY EPOCH EQUAL EQUIP ERASE ERECT ERODE ERROR ERUPT ESSAY ETHER ETHIC ETHOS EVADE EVENT EVERY EVICT EVOKE EXACT EXCEL EXERT EXILE EXIST EXPAT EXPEL EXTOL EXTRA EXUDE FABLE FACET FAINT FAIRY FAITH FALSE FAMED FANCY FARCE FATAL FATTY FATWA FAULT FAUNA FAVOR FEAST FECAL FELON FENCE FERAL FERRY FETAL FETCH FETID FETUS FEVER FEWER FIBER FIELD FIEND FIERY FIFTH FIFTY FIGHT FILET FILLY FILTH FINAL FINER FIRST FISHY FIXER FIZZY FLAIL FLAIR FLAKE FLAKY FLAME FLANK FLARE FLASH FLASK FLEET FLESH FLICK FLIER FLING FLIRT FLOAT FLOCK FLOOD FLOOR FLORA FLOSS FLOUR FLOUT FLOWN FLUFF FLUID FLUKE FLUNG FLUNK FLUSH FLUTE FLYER FOCAL FOCUS FOGGY FOLLY FORAY FORCE FORGE FORGO FORTE FORTH FORTY FORUM FOUND FOYER FRAIL FRAME FRANC FRANK FRAUD FREAK FREED FREER FRESH FRIED FRISK FROCK FRONT FROST FROTH FROWN FROZE FRUIT FUDGE FUGUE FULLY FUNGI FUNKY FUNNY FUROR FURRY FUSSY FUZZY GAFFE GAMER GAMUT GATED GATOR GAUDY GAUGE GAUNT GAUZE GAUZY GAVEL GEEKY GEESE GENIE GENRE GHOST GIANT GIDDY GIRTH GIVEN GIVER GLAND GLARE GLASS GLAZE GLEAM GLEAN GLIDE GLINT GLITZ GLOAT GLOBE GLOOM GLORY GLOSS GLOVE GNOME GOING GONNA GOOEY GOOFY GOOSE GORGE GOTTA GRACE GRADE GRAFT GRAIL GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS GRATE GRAVE GRAVY GRAZE GREAT GREED GREEN GREET GRIEF GRILL GRIME GRIMY GRIND GRIPE GRIST GROAN GROOM GROSS GROUP GROVE GROWL GROWN GRUFF GRUNT GUARD GUESS GUEST GUIDE GUILD GUILE GUILT GUISE GULAG GUMBO GUMMY GUSTO GUTSY HABIT HAIKU HAIRY HALAL HALVE HANDY HAPPY HARDY HAREM HARSH HASTE HASTY HATCH HAUNT HAUTE HAVEN HAVOC HAZEL HEADY HEARD HEART HEATH HEAVE HEAVY HEDGE HEFTY HEIST HELLO HENCE HERON HIJAB HIKER HILLY HINGE HIPPO HITCH HOARD HOARY HOBBY HOIST HOKEY HOMER HOMEY HONEY HONOR HORDE HORSE HOTEL HOTLY HOUND HOUSE HOVER HUMAN HUMID HUMOR HUNCH HUNKY HURRY HUSKY HYENA HYPER ICING IDEAL IDIOM IDIOT IDYLL IMAGE IMBUE IMPLY INANE INBOX INCUR INDEX INDIE INEPT INERT INFER INLET INNER INPUT INSET INTRO IRATE IRONY ISSUE ITCHY IVORY JADED JAUNT JAZZY JELLY JERKY JEWEL JIFFY JOINT JOKER JOKEY JOLLY JUDGE JUICE JUICY JUMBO JUMPY JUNTA JUROR KARMA KAYAK KEBAB KHAKI KINDA KINKY KIOSK KITTY KNACK KNEAD KNEEL KNELL KNELT KNIFE KNOCK KNOLL KNOWN KOALA KOOKY KUDOS LABEL LABOR LADEN LADLE LANCE LANKY LAPEL LAPSE LARGE LASER LASSO LATCH LATER LATEX LATTE LAUGH LAYER LAYUP LEAFY LEAKY LEAPT LEARN LEASE LEASH LEAST LEAVE LEDGE LEERY LEFTY LEGAL LEGIT LEMON LEVEE LEVEL LEVER LIBEL LIGHT LIKEN LILAC LIMBO LIMIT LINEN LINER LINGO LITHE LIVER LIVID LLAMA LOATH LOBBY LOCAL LOCUS LODGE LOFTY LOGIC LONER LOONY LOOPY LOOSE LOSER LOTUS LOUSY LOVER LOWER LOWLY LOYAL LUCID LUCKY LUMPY LUNAR LUNCH LUNGE LUPUS LURCH LURID LUSTY LYING LYMPH LYRIC MACHO MACRO MADLY MAFIA MAGIC MAJOR MAKER MANGA MANGO MANIA MANIC MANLY MANOR MAPLE MARCH MARRY MARSH MASON MASSE MATCH MATTE MATZO MAUVE MAVEN MAXIM MAYBE MAYOR MEANT MEATY MECCA MEDAL MEDIA MEDIC MELEE MELON MERCY MERGE MERIT MERRY MESSY METAL METER METRO MICRO MIDST MIGHT MILKY MIMIC MINCE MINER MINOR MINTY MINUS MISTY MIXER MODAL MODEL MODEM MODUS MOGUL MOIST MOLAR MOLDY MOMMY MONEY MONTH MOODY MOOSE MOPED MORAL MORON MORPH MOSSY MOTEL MOTIF MOTOR MOTTO MOUND MOUNT MOURN MOUSE MOUTH MOVER MOVIE MOWER MOXIE MUCUS MUDDY MUGGY MULCH MUMMY MUNCH MURAL MURKY MUSHY MUSIC MUSTY NADIR NAIVE NAKED NANNY NASAL NASTY NATTY NAVAL NAVEL NEEDY NERDY NERVE NERVY NEVER NEWER NEWLY NEXUS NICER NICHE NIECE NIFTY NIGHT NINTH NOBLE NOBLY NOISE NOISY NOMAD NOOSE NORTH NOTCH NOVEL NUDGE NURSE NUTTY NYLON NYMPH OASIS OBESE OCCUR OCEAN ODDER ODDLY OFFER OFTEN OLDER OLIVE ONION ONSET OOMPH OPERA OPIUM OPTIC ORBIT ORDER ORGAN OTHER OTTER OUGHT OUNCE OUTDO OUTER OUTRE OVERT OWING OWNER OXIDE OZONE PAEAN PAGAN PAGER PAINT PALSY PANDA PANEL PANIC PAPAL PAPER PARKA PARSE PARTY PASSE PASTA PASTE PATCH PATIO PATTY PAUSE PEACE PEACH PEARL PECAN PEDAL PENAL PENCE PENNY PEPPY PERCH PERIL PERKY PESKY PESTO PETAL PETIT PETRI PETTY PHASE PHONE PHONY PHOTO PIANO PICKY PIECE PIETY PIGGY PILOT PINCH PINOT PINUP PIOUS PIQUE PITCH PITHY PIVOT PIXIE PIZZA PLACE PLAID PLAIN PLANE PLANK PLANT PLATE PLAZA PLEAD PLUCK PLUMB PLUME PLUMP PLUSH POACH POINT POISE POKER POLAR POLIO POLKA POPPY PORCH POSSE POUCH POUND POWER PRANK PRESS PRICE PRIDE PRIED PRIMA PRIME PRINT PRIOR PRISM PRIVY PRIZE PROBE PROMO PRONE PRONG PROOF PROSE PROUD PROVE PROWL PROXY PRUDE PRUNE PSALM PUDGY PUFFY PULPY PULSE PUNCH PUPIL PUPPY PUREE PURER PURGE PURSE PUSHY QUACK QUAIL QUAKE QUART QUASH QUASI QUEEN QUEER QUELL QUERY QUEST QUEUE QUICK QUIET QUILL QUILT QUIRK QUITE QUOTA QUOTE RABBI RABID RACER RADAR RADIO RAINY RAISE RALLY RAMEN RANCH RANGE RANGY RAPID RARER RASPY RATIO RATTY RAVEN RAZOR REACH REACT READY REALM REBEL REBUT RECAP RECUR REEDY REFER REGAL REHAB REIGN RELAX RELAY RELIC REMIX RENEW REPAY REPEL REPLY RERUN RESET RESIN RETRO REUSE REVEL REVUE RHINO RHYME RIDER RIDGE RIFLE RIGHT RIGID RIGOR RINSE RIPEN RISEN RISKY RIVAL RIVEN RIVER ROACH ROAST ROBIN ROBOT ROCKY RODEO ROGUE ROOMY ROOST ROUGH ROUND ROUSE ROUTE ROVER ROWDY ROYAL RUBLE RUDDY RUGBY RULER RUMOR RUNNY RURAL RUSTY SADLY SAFER SAINT SALAD SALON SALSA SALTY SALVE SALVO SAMBA SANDY SAPPY SASSY SATIN SAUCE SAUCY SAUNA SAUTE SAVER SAVOR SAVVY SCALE SCALP SCALY SCANT SCARE SCARF SCARY SCENE SCENT SCION SCOFF SCOLD SCONE SCOOP SCOPE SCORE SCORN SCOUR SCOUT SCOWL SCRAP SCREW SCRIM SCRUB SCRUM SCUBA SEDAN SEEDY SEGUE SEIZE SENSE SERUM SERVE SETUP SEVEN SEVER SEWER SHACK SHADE SHADY SHAFT SHAKE SHAKY SHALE SHALL SHAME SHANK SHAPE SHARD SHARE SHARK SHARP SHAVE SHAWL SHEAF SHEEN SHEEP SHEER SHEET SHEIK SHELF SHELL SHIED SHIFT SHINE SHINY SHIRT SHOCK SHONE SHOOK SHOOT SHORE SHORN SHORT SHOUT SHOVE SHOWN SHOWY SHRED SHRUB SHRUG SHYLY SIEGE SIEVE SIGHT SILKY SILLY SINCE SINUS SIREN SIXTH SIXTY SKATE SKIER SKILL SKIMP SKIRT SKULL SKUNK SLACK SLAIN SLANG SLANT SLASH SLATE SLEEK SLEEP SLEET SLEPT SLICE SLICK SLIDE SLIME SLIMY SLING SLOPE SLOTH SLUMP SLUNG SLURP SLUSH SLYLY SMACK SMALL SMART SMASH SMEAR SMELL SMILE SMIRK SMOKE SMOKY SNACK SNAIL SNAKE SNARE SNARL SNEAK SNEER SNIDE SNIFF SNOOP SNORE SNORT SNOUT SNOWY SNUCK SNUFF SOAPY SOBER SOGGY SOLAR SOLID SOLVE SONAR SONIC SORRY SOUND SOUPY SOUTH SPACE SPADE SPANK SPARE SPARK SPASM SPATE SPAWN SPEAK SPEAR SPECK SPEED SPELL SPEND SPENT SPERM SPICE SPICY SPIED SPIKE SPIKY SPILL SPINE SPIRE SPITE SPLIT SPOIL SPOKE SPOOF SPOOK SPOON SPORE SPORT SPOUT SPRAY SPREE SPRIG SPURN SPURT SQUAD SQUAT SQUID STACK STAFF STAGE STAID STAIN STAIR STAKE STALE STALK STALL STAMP STAND STARE STARK START STASH STATE STAVE STEAD STEAK STEAL STEAM STEEL STEEP STEER STERN STICK STIFF STILL STING STINK STINT STOCK STOIC STOKE STOLE STOMP STONE STONY STOOD STOOL STOOP STORE STORK STORM STORY STOUT STOVE STRAP STRAW STRAY STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNT STYLE SUAVE SUEDE SUGAR SUING SUITE SUNNY SUPER SURGE SURLY SUSHI SWAMP SWANK SWARM SWATH SWEAR SWEAT SWEEP SWEET SWELL SWEPT SWIFT SWINE SWING SWIPE SWIRL SWOON SWOOP SWORD SWORE SWORN SWUNG SYRUP TABLE TABOO TACIT TACKY TAINT TAKEN TAKER TALLY TALON TAMER TANGO TANGY TAPER TARDY TASTE TASTY TAUNT TEACH TEARY TEASE TEDDY TEETH TEMPO TEMPT TENET TENOR TENSE TENTH TEPID TERRA TERSE TESTY THANK THEFT THEIR THEME THERE THESE THICK THIEF THIGH THING THINK THIRD THONG THORN THOSE THREE THREW THROB THROW THUMB THUMP THYME TIARA TIDAL TIGER TIGHT TIMER TIMID TINGE TINNY TIPSY TIRED TITAN TITLE TOAST TODAY TOKEN TONAL TONER TONIC TOOTH TOPIC TORCH TORSO TOTAL TOTEM TOUCH TOUGH TOWEL TOWER TOXIC TOXIN TRACE TRACK TRACT TRADE TRAIL TRAIN TRAIT TRANS TRASH TREAD TREAT TREND TRIAL TRIBE TRICK TRIED TRIPE TRITE TROLL TROOP TROPE TROUT TROVE TRUCE TRUCK TRUER TRULY TRUMP TRUNK TRUST TRUTH TRYST TULIP TULLE TUMOR TUNIC TUTOR TWANG TWEAK TWEED TWEEN TWEET TWICE TWINE TWIRL TWIST TYING ULCER ULTRA UNCLE UNDER UNDID UNDUE UNFIT UNIFY UNION UNITE UNITY UNMET UNTIE UNTIL UNZIP UPEND UPPER UPSET URBAN URINE USAGE USHER USING USUAL USURP UTTER VAGUE VALET VALID VALUE VALVE VAPID VAPOR VAULT VEGAN VENAL VENOM VENUE VERGE VERSE VERVE VICAR VIDEO VIGIL VIGOR VILLA VINYL VIOLA VIPER VIRAL VIRUS VISIT VISOR VISTA VITAL VITRO VIVID VOCAL VODKA VOGUE VOICE VOILA VOMIT VOTER VOUCH VOWEL VYING WACKY WAFER WAGER WAGON WAIST WAIVE WALTZ WASTE WATCH WATER WAVER WEARY WEAVE WEDGE WEEPY WEIGH WEIRD WHACK WHALE WHARF WHEAT WHEEL WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITE WHOLE WHOSE WIDEN WIDER WIDOW WIDTH WIELD WINCE WINDY WIPER WISER WISPY WITCH WITTY WOKEN WOMAN WOMEN WONKY WOODY WOOZY WORLD WORRY WORSE WORST WORTH WOULD WOUND WOVEN WRATH WREAK WRECK WREST WRING WRIST WRITE WRONG WROTE WRUNG WRYLY YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA ZESTY ZIPPY`;
+
+const RARE_RAW=`CHEMO PENNE AFFIX FUSTY GAWKY RETRY UNWED TEENY FEIGN SEPIA TUNER CONCH DEUCE SPIEL TAWNY FOLKY BAYOU YUMMY DITTO AFIRE LEGGY LIFER SPUNK AGLOW TRAMP STENT AUGUR LAGER UNCUT PUBIC GONZO TAROT CHUCK GUSTY AGAPE ATLAS ARGOT POSIT FRYER RUMBA TALKY SNARK OCHER SEAMY TAUPE TURBO TUMMY LOGIN SOOTY PIXEL BLOOP AGAVE GIRLY CABBY CACAO MAIZE PLUNK DIRGE RENAL POTTY RISER GIZMO WEEDY DOOZY FOAMY AERIE RANDY MADAM FEMUR SHIRK MAMBO MIRTH WHOOP MEZZO DUVET SURER WIMPY FUTON ELFIN PARRY GROPE LIVEN UMAMI WORDY PAYER TORTE THRUM GOODY QUESO MOCHA SMOCK DOGGY GUAVA CATTY RUPEE CURIO LAITY SKEIN ARDOR SWISH EKING INTEL SHEAR SULLY PASTY SABLE BUXOM HOOKY NINJA CHUMP REDUX EPOXY MUSKY OPINE ADIEU VALOR HATER STREP BEGAT SKIFF TIZZY DIVVY POOCH DOWRY HAMMY PUNKY CHIDE JAMMY PREEN BEGET SCOOT TRUSS BLIMP LEACH PADDY ABBEY GOUGE TRILL DORKY RITZY TRIAD HOLLY GAMMA PETER SUMAC FELLA PUTTY CREAK HELIX OFFAL SHALT SPINY BUTCH YUCCA HORNY PSYCH FEINT GOURD REDID SLINK PIPER PILAF BARRE REBAR ROUGE POUTY CHOCK BATTY TAFFY CHAFF STUNK GODLY PALER SANER JETTY SQUAB SHIVA MERCH SHILL SISSY FILMY MOUSY SITAR HOKUM TRAWL REMIT UNLIT DECAL FOIST SYNTH FOUNT STRUM MOPEY ADOBO PEEVE SULKY DWELT OLDEN MANSE GRUEL ROTOR BICEP FRIAR PYGMY WACKO EXALT PINKY BOCCE GAILY ATOLL PRAWN AGITA ALLOT ROWER APING ROMAN DOLLY MANNA AHOLD TWILL JOUST TIBIA DEIGN IGLOO SLUNK SPOOL PANKO CUTER BLOKE LITER DUMPY DOWNY MAGMA STAPH LUCRE ABBOT DOTTY CADDY DECAF OCTET FJORD GIMME HENNA INLAY LETUP FLINT PINEY BILLY BLUER SHUCK ULNAR EXULT SINEW CREMA GOLLY SATAY SIDLE BATIK SNIPE WANLY REBUS FLYBY BOSON SLOOP TERRY BREAM OMBRE DIODE HYDRO STILT VIXEN ICILY KUDZU RICIN MEALY PEONY DITSY EMOTE CAROL STEED AMITY BYLAW OLDIE GULLY SHUNT JUNKY SAGGY ANCHO BENTO AMOUR OVARY STANK TABBY DACHA SPELT NEWSY PATSY LATHE SNAFU INTER OCHRE ASPEN DISHY FLACK LEPER FLUKY BASAL FOLIC GROUT SPLAT DITZY WINCH DINKY SUDSY DROSS HISSY DEMUR SMELT BOBBY CAROM DULLY FICUS PINTO KAPUT USURY JOWLY REARM SABER EYING POKEY PYLON DOULA GONER CUTUP KUGEL SYNOD TEPEE HOVEL IMPEL ISLET MIRIN SWILL YUCKY MOCHI RIVET TATTY SYNCH BONGO CRIER DUNCE SKEET GLADE MANGY TARRY BEFIT CHOMP EMCEE RAYON RECUT GABLE RUMMY SLOSH EDEMA HOOEY GECKO GLUEY GUSHY KRILL GOFER SHREW BIDET LOAMY PUNNY LIPID ASPIC CLEAT SCUFF BOGGY BUSTY DIVAN SLAKE RIPER SHUSH COVEN UNHIP AGATE JULEP OVOID HUTCH MUCKY SATYR CLACK CACTI CAPRI FUDGY LEECH MOREL SUNUP TORTA MOMMA BEGOT PORKY RUNUP KAZOO CUTIE CRONE FRILL SNAKY LARVA SKULK BOFFO BLEAT DIVOT TWAIN GROIN GUANO SOFTY MOONY OMEGA ASCOT ETUDE REFIT CELEB NIPPY HUBBY GHOUL BALSA BEADY COLIC MACAW HOOCH REBID TUBBY BLEEP BABKA EGRET ELOPE SCAMP TITHE YAHOO PRIMO UMBER CUBBY MILER BETEL BYWAY ELIDE FINCH FECES GOOPY ALDER PANTY TUBER FOLIO QUANT BITTY AMBIT HUFFY MITER SALLY FRITZ QUAFF ZILCH AMARO SEDER VAMPY CORGI FILER GRIFT LEMUR SPLAY GASSY SHOAL THINE MISER NATAL BEZEL LATKE LOUSE BILGE CLUCK CLUNK HOPPY SQUIB POLYP DRECK HYDRA ALOHA CLAVE PLEAT VOILE QUARK TATER YODEL MALTY NACHO XENON BIBLE GRUMP KNISH RUING CARNY CUING VENTI ASSAY EXURB KIDDO REIKI WOOLY FLECK SERIF ADMIN INAPT KLUTZ PLONK GABBY LARCH SINGE TODDY DAUNT ENEMA TOPAZ RADON STEIN FRIZZ MOSEY ACING DIPPY PORGY ROSIN COPSE GUSSY STELE BOUGH WORMY HERTZ LOTTO CARAT CHOUX SCRIP SOPPY WHORL CIVET FROND HARPY ARGON PANSY FEMME SILTY ARBOR CLIME DALLY FRISE QUALM ROUST SMITE SWAMI POOFY FLOWY HIPPY LUGER NINNY TOADY CAIRN POPUP DOILY MYRRH PRION AXING UDDER AGORA BOWER CRESS GOLEM SAVOY BURRO PLINK UNSEE WURST TUBAL BANDY DATER ETHYL FAKER BRIAR CAVIL CODEX DUCHY FUGAL PLAIT TROMP BITER BENDY BORON DROID DROIT GETUP BOOTY CAPON CAROB LICIT RUDER SCREE GAMEY MELTY AUGER GLACE SPILT SWAIN APHID CADGE SEDGE WARTY WAXEN CUPID EDIFY GNASH HACKY PEATY DUCKY SCALD SHYER YOKEL MORAY PRIMP DOWEL LOUPE MOOCH NAPPY ASTER CHARY GORSE BIOME DEBUG DWEEB KEFIR SPIFF AMIGO ANIMA COVEY POSER TWERP UNFED GULCH HYMEN SMARM STREW BOOBY DEIFY MIXUP OAKEN FUNGO BEAUT RECON HOLEY PISTE PLAYA POLIS PUPAE WINEY ADIOS BUTTE GLOWY INCEL YAPPY PRICK PLEBE DRUID SCAPE HOWDY SCRAM SCULL WHIST CHINO INURE MAMMA TWERK AXIAL CALVE FILCH PRICY RAGER ECLAT GEODE RETCH SWALE WHIRR FLUME GUTTY HUMUS MANGE PACER VROOM DINGO DOPER GAYER GUPPY HUSSY LORRY EMERY KNAVE REMAP BOULE FRACK MOLLY PAVER BIPOD ICIER BIPED CILIA CLOMP WRACK NUTSO SCROD DATUM SPORK STENO SOOTH GLYPH JANKY WHOMP ABASE CURIA EBOOK HANKY IDLER KISSY MOULD NITRO RERAN VEINY HUGGY INGOT PADRE RAVER WHELK BELAY BORAX SHIRE MIDGE PIKER TILDE TRIKE VELDT ASTIR BOING FOGEY FRUMP GERMY VERSO KEMPT LIPPY REIFY SMUSH TRIER CRICK IONIC TAPIR ATRIA CROUP JIMMY PAYEE KARAT DUTCH PRISE SMOTE SPUME BRAVA CRUET OXBOW BORIC GUNKY HARRY LACEY MATEY REPOT TASER UMBRA OILER RAJAH WILLY BRONC JOIST LIEGE RATER BOLUS CARER DRAKE GAZER MAMBA ORATE UVULA ADDER BRIER OVINE TRICE ADDLE IVIED KVELL NEIGH OKAPI WAKEN BEVEL LAMER MALIC AIDER LORIS PHAGE POESY RELIT ROPER ZONAL JUDGY NODAL SMITH SNOOT BURKA ANODE ANOLE KABOB LOESS QUOTH TALUS BABEL CHURL JUNTO PHISH BULGY BURSA EIDER GLUTE WHIZZ BALER DEIST ESTER LORDY NABOB SIGMA THETA TORUS ASKER BARER DILLY KAPPA NOSEY PUDGE RADII RETIE STILE TRESS WIGHT BONNY GLOOP LOGON PROLE UNBOX UNCAP BERYL BITSY HINKY LEANT SCARP SOWER TELOS TWIXT VAUNT ELATE FAKIR PARCH SWASH SABRE AMUCK COATI GNARL UNSET COPAY LUMEN MISSY HIDER TONEY AVAST CHEEP COUTH EDGER FADER SAMEY SITUP CUBIT DOZER HOCUS HOODY OUTGO WOOER CRUMP FROSH HULKY LOLLY SCHWA UNPIN UNTAG BEFOG BOGIE CORKY JOULE MOPER UTILE CONIC CORER GONAD OUIJA PARER SNARF STOMA WADER WHELP METRE BALDY CLADE HIRER TITER BIDDY LITRE BONER TORAH AUNTY DEBAR OGLER PLASM TETRA ABOIL BRUIN DOWSE DUCAT UNJAM AFORE BONEY DICER ILIAC NAGGY OVATE TUFTY AXION LEXIS RALPH RHEUM UNSAY DEFOG GLAMP HUMPH REBUY ROGER SWANG ACHOO CAPUT CARET CURER LEMMA REDUB UNARM GAYLY GLOAM MINIM OCTAL REFRY BESOT MESHY PLIER ABASH EDUCE EVERT PIPET RESAW RETAG TONGA MOULT FIRTH ANNAL BRUSK QURAN ABLED ACHED ACTED ADDED AIDED AILED AIMED AIRED AMPED ARCED ASHED ASKED BALED BARED BASED BATED BAYED BIDED BIKED BODED BONED BOOED BOWED BOXED BUSED CAGED CAKED CANED CAPED CARED CASED CAVED CAWED CEDED CITED CLUED CODED CONED COOED COPED CORED COWED COXED CUBED CURED DARED DATED DAZED DICED DIKED DINED DIVED DOLED DOPED DOSED DOTED DOZED DUKED DUPED EARED EASED EBBED EDGED EGGED ENDED ERRED FACED FADED FAKED FARED FATED FAXED FAZED FETED FILED FINED FIRED FIXED FLIED FUMED FUSED GAMED GAPED GAZED GIBED GLUED GORED HATED HAZED HEWED HEXED HIKED HIRED HIVED HOLED HOMED HONED HOPED HOSED HYPED IDLED IMBED INKED IRKED JAWED JIBED JOKED JUKED KEYED KNEED KORAN LACED LAMED LAVED LAZED LIKED LINED LIVED LOBED LOPED LOVED LUBED LURED LUTED MATED MAXED METED MEWED MIKED MIMED MINED MIRED MIXED MOOED MOVED MOWED MUSED MUTED NAMED NIXED NOSED NOTED NUKED OARED OFFED OGLED OILED OOZED OPTED ORBED OUTED OWNED PACED PAGED PALED PARED PAVED PAWED PIKED PILED PINED PIPED PLIED POKED POLED PORED POSED PUKED RACED RAGED RAKED RATED RAVED RAZED RILED ROBED ROPED ROVED ROWED RULED SATED SAVED SAWED SEWED SHOED SIDED SIRED SITED SIZED SKIED SOLED SOWED TAMED TAPED TASED TAXED TIDED TILED TIMED TONED TOTED TOWED TOYED TREED TUBED TUNED TYPED UPPED URGED VAPED VEXED VINED VOTED VOWED WADED WAGED WAKED WANED WAVED WAXED WILED WINED WIPED WIRED WOOED WOWED YOKED ZONED`;
+
+const COMMON = COMMON_RAW.trim().split(/\s+/).map(w => w.toLowerCase());
+const RARE   = RARE_RAW.trim().split(/\s+/).map(w => w.toLowerCase());
+document.getElementById('wc').textContent =
+ COMMON.length.toLocaleString() + ' common · ' + RARE.length.toLocaleString() + ' less common';
+
+// ── State ────────────────────────────────────────────────────────────────────
+const CYCLE = ['gray','yellow','green'];
+let slots = Array(5).fill(null).map(() => ({letter:'', state:'empty'}));
+let constraints = [];
+let focusedIdx = 0;
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+const tileEl  = i => document.getElementById('t'+i);
+const inputEl = i => document.getElementById('i'+i);
+const letterEl= i => document.getElementById('l'+i);
+
+function sc(s){ return s==='green'?'g':s==='yellow'?'y':s==='gray'?'gr':'e'; }
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderTiles() {
+ slots.forEach((s, i) => {
+   const tile = tileEl(i);
+   // rebuild classes
+   tile.className = 'tile';
+   if (s.letter) tile.classList.add('has-letter');
+   if (s.letter) tile.classList.add(sc(s.state));
+   if (i === focusedIdx) tile.classList.add('focused');
+   letterEl(i).textContent = s.letter.toUpperCase();
+ });
+ const any = slots.some(s => s.letter);
+ document.getElementById('hint').textContent = any ? 'tap filled tile to cycle colour' : '';
+ const addBtn = document.getElementById('btn-add');
+ addBtn.className = any ? 'active' : '';
+}
+
+function focusTile(i) {
+ focusedIdx = i;
+ inputEl(i).focus();
+ renderTiles();
+}
+
+// ── Input handling (iOS-safe) ─────────────────────────────────────────────────
+// Strategy: clear input after each keystroke, store letter in our own state.
+// This avoids iOS autocomplete/composition issues entirely.
+for (let i = 0; i < 5; i++) {
+ const inp = inputEl(i);
+
+ inp.addEventListener('focus', () => {
+   focusedIdx = i;
+   renderTiles();
+ });
+
+ inp.addEventListener('blur', () => {
+   renderTiles();
+ });
+
+ // keydown: handle special keys (Backspace, Enter, arrows)
+ inp.addEventListener('keydown', e => {
+   if (e.key === 'Backspace' || e.key === 'Delete') {
+     e.preventDefault();
+     if (slots[i].letter) {
+       slots[i].letter = '';
+       slots[i].state = 'empty';
+       renderTiles();
+     } else if (i > 0) {
+       slots[i-1].letter = '';
+       slots[i-1].state = 'empty';
+       focusTile(i-1);
+     }
+   } else if (e.key === 'Enter') {
+     e.preventDefault();
+     addGuess();
+   } else if (e.key === 'ArrowLeft' && i > 0) {
+     focusTile(i-1);
+   } else if (e.key === 'ArrowRight' && i < 4) {
+     focusTile(i+1);
+   }
+ });
+
+ // input: fires on every character including on iOS
+ inp.addEventListener('input', e => {
+   const val = inp.value;
+   // extract only alpha chars
+   const letters = val.replace(/[^a-zA-Z]/g, '');
+   if (!letters) { inp.value = ''; return; }
+
+   const letter = letters[letters.length - 1].toLowerCase();
+   slots[i].letter = letter;
+   slots[i].state = 'gray'; // default new letter to gray
+
+   // CRITICAL: clear the actual input so next keypress isn't appended
+   inp.value = '';
+
+   renderTiles();
+
+   // advance focus
+   if (i < 4) {
+     focusTile(i + 1);
+   }
+ });
+
+ // Tile touch: cycle colour (fire on touchend to avoid conflicts with input focus)
+ tileEl(i).addEventListener('touchend', e => {
+   if (!slots[i].letter) return;
+   // only cycle if the touch started and ended on this tile (not a scroll)
+   e.preventDefault();
+   const cur = slots[i].state === 'empty' ? 'gray' : slots[i].state;
+   slots[i].state = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+   renderTiles();
+ });
+
+ // Desktop: click to cycle
+ tileEl(i).addEventListener('mousedown', e => {
+   if (!slots[i].letter) return;
+   // only intercept if tile has a letter — let click fall through to input otherwise
+   e.preventDefault();
+   const cur = slots[i].state === 'empty' ? 'gray' : slots[i].state;
+   slots[i].state = CYCLE[(CYCLE.indexOf(cur) + 1) % CYCLE.length];
+   renderTiles();
+ });
+}
+
+// ── Add guess ─────────────────────────────────────────────────────────────────
+function addGuess() {
+ if (!slots.some(s => s.letter)) return;
+ const greens = {}, yellows = [], grays = new Set();
+ for (let i = 0; i < 5; i++) {
+   const {letter, state} = slots[i];
+   if (!letter) continue;
+   if (state === 'green') greens[i] = letter;
+   else if (state === 'yellow') {
+     const ex = yellows.find(y => y.letter === letter);
+     if (ex) ex.notAt.push(i); else yellows.push({letter, notAt:[i]});
+   } else grays.add(letter);
+ }
+ constraints.push({slots: slots.map(s => ({...s})), greens, yellows, grays});
+ slots = Array(5).fill(null).map(() => ({letter:'', state:'empty'}));
+ focusedIdx = 0;
+ renderTiles();
+ renderGuesses();
+ document.getElementById('results-sec').innerHTML = '';
+ document.getElementById('btn-solve').style.display = 'inline-block';
+ document.getElementById('btn-reset').style.display = 'inline-block';
+ document.getElementById('guesses-sec').style.display = 'block';
+ setTimeout(() => focusTile(0), 50);
+}
+
+// ── Render guesses ─────────────────────────────────────────────────────────────
+function renderGuesses() {
+ const gl = document.getElementById('g-list');
+ gl.innerHTML = '';
+ constraints.forEach((c, ci) => {
+   const row = document.createElement('div');
+   row.className = 'guess-row';
+   c.slots.forEach(s => {
+     const mt = document.createElement('div');
+     mt.className = 'mt ' + sc(s.state);
+     mt.textContent = s.letter.toUpperCase();
+     row.appendChild(mt);
+   });
+   const rb = document.createElement('button');
+   rb.className = 'rm-btn';
+   rb.textContent = '×';
+   rb.addEventListener('click', () => {
+     constraints.splice(ci, 1);
+     renderGuesses();
+     document.getElementById('results-sec').innerHTML = '';
+     if (!constraints.length) {
+       document.getElementById('btn-solve').style.display = 'none';
+       document.getElementById('btn-reset').style.display = 'none';
+       document.getElementById('guesses-sec').style.display = 'none';
+     }
+   });
+   row.appendChild(rb);
+   gl.appendChild(row);
+ });
+}
+
+// ── Solve ──────────────────────────────────────────────────────────────────────
+function wordOk(word) {
+ for (const {greens, yellows, grays} of constraints) {
+   for (let i = 0; i < 5; i++) if (greens[i] && word[i] !== greens[i]) return false;
+   for (const {letter, notAt} of yellows) {
+     if (!word.includes(letter)) return false;
+     if (notAt.some(p => word[p] === letter)) return false;
+   }
+   for (const l of grays) {
+     const keep = Object.values(greens).includes(l) || yellows.some(y => y.letter === l);
+     if (!keep && word.includes(l)) return false;
+   }
+ }
+ return true;
+}
+
+function chip(word, cls, top) {
+ const d = document.createElement('div');
+ d.className = 'chip ' + cls + (top ? ' top' : '');
+ d.textContent = word.toUpperCase();
+ if (top) { const s = document.createElement('span'); s.className='star'; s.textContent='★'; d.appendChild(s); }
+ return d;
+}
+
+function solve() {
+ const ch = COMMON.filter(wordOk).sort();
+ const rh = RARE.filter(wordOk).sort();
+ const rs = document.getElementById('results-sec');
+ rs.innerHTML = '';
+
+ // Common
+ const cg = document.createElement('div'); cg.className = 'res-group';
+ const chdr = document.createElement('div'); chdr.className = 'res-header';
+ chdr.innerHTML = `<div class="sec-label g">Common words</div><div class="match-ct">${ch.length} match${ch.length!==1?'es':''}</div>`;
+ cg.appendChild(chdr);
+ if (!ch.length) {
+   const nm = document.createElement('div'); nm.className='no-match'; nm.textContent='None — check tile colours'; cg.appendChild(nm);
+ } else {
+   const gr = document.createElement('div'); gr.className='word-grid';
+   ch.forEach((w,i) => gr.appendChild(chip(w,'common',i===0)));
+   cg.appendChild(gr);
+ }
+ rs.appendChild(cg);
+
+ // Less common
+ if (rh.length) {
+   const rg = document.createElement('div'); rg.className='res-group';
+   const rhdr = document.createElement('div'); rhdr.className='res-header';
+   rhdr.innerHTML = `<div class="sec-label y">Less common</div><div class="match-ct">${rh.length} match${rh.length!==1?'es':''}</div>`;
+   rg.appendChild(rhdr);
+   const gr = document.createElement('div'); gr.className='word-grid';
+   rh.forEach(w => gr.appendChild(chip(w,'rare',false)));
+   rg.appendChild(gr);
+   rs.appendChild(rg);
+ }
+
+ if (!ch.length && !rh.length) {
+   const nm = document.createElement('div'); nm.className='no-match'; nm.style.marginTop='8px';
+   nm.textContent = 'No matches — double-check your tile colours'; rs.appendChild(nm);
+ }
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+function reset() {
+ constraints = [];
+ slots = Array(5).fill(null).map(() => ({letter:'', state:'empty'}));
+ focusedIdx = 0;
+ renderTiles();
+ document.getElementById('g-list').innerHTML = '';
+ document.getElementById('results-sec').innerHTML = '';
+ document.getElementById('guesses-sec').style.display = 'none';
+ document.getElementById('btn-solve').style.display = 'none';
+ document.getElementById('btn-reset').style.display = 'none';
+ setTimeout(() => focusTile(0), 50);
+}
+
+// ── Button wiring (touchend for iOS reliability) ───────────────────────────────
+function wireBtn(id, fn) {
+ const btn = document.getElementById(id);
+ btn.addEventListener('touchend', e => { e.preventDefault(); fn(); });
+ btn.addEventListener('click', fn);
+}
+wireBtn('btn-add',   addGuess);
+wireBtn('btn-solve', solve);
+wireBtn('btn-reset', reset);
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+renderTiles();
+setTimeout(() => focusTile(0), 100);
+</script>
+</body>
+</html>
