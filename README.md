@@ -33,8 +33,12 @@ Built as a Progressive Web App (PWA) so it can be installed directly to your iPh
 ## Installing on iPhone
 
 1. Open the app URL in **Safari** (not tested with Chrome or Firefox)
+ https://flyfreeweather.github.io/wordle-solver/ 
+1. Tap the three ... (bottom right)
 1. Tap the **Share** button (box with arrow pointing up)
+1. Tap View More (bottom right down arrow)
 1. Tap **Add to Home Screen**
+1. Select 'Open as Web App'
 1. Tap **Add**
 
 The app will appear on your home screen with the WS icon and open full-screen with no browser, just like a native app. It works completely offline after the first visit.
