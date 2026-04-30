@@ -165,14 +165,22 @@ button:active { opacity: 0.7; }
 .word-grid { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .chip {
- border-radius: 5px; padding: 7px 12px;
+ border-radius: 5px; padding: 7px 10px;
  font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+ display: inline-flex; align-items: center; gap: 6px;
 }
 .chip.common     { background: #1a1a1b; border: 1px solid #3a3a3a; color: #ddd; }
 .chip.common.top { background: #1b2e1b; border-color: #538d4e; color: #7dd87a; }
 .chip.rare       { background: #1c1a10; border: 1px solid #3a3218; color: #c9a840; }
-.star { font-size: 10px; margin-left: 4px; color: #7dd87a; }
+.star { font-size: 10px; color: #7dd87a; letter-spacing: 0; }
 .no-match { font-size: 13px; color: #e74c3c; }
+.rem-count {
+ font-size: 11px; font-weight: 600; letter-spacing: 0;
+ color: #555; background: #0d0d0e;
+ border-radius: 3px; padding: 1px 5px;
+ min-width: 20px; text-align: center; flex-shrink: 0;
+}
+.chip.common.top .rem-count { color: #4a8a49; background: #0a130a; }
 
 @media (min-width: 500px) {
  .tile { width: 62px; height: 62px; }
@@ -408,14 +416,24 @@ function renderGuesses() {
 // ── Solve ──────────────────────────────────────────────────────────────────────
 function wordOk(word) {
  for (const {greens, yellows, grays} of constraints) {
+   // Green: letter must be at exact position
    for (let i = 0; i < 5; i++) if (greens[i] && word[i] !== greens[i]) return false;
+
+   // Yellow: letter must appear in word, but not at the excluded positions
    for (const {letter, notAt} of yellows) {
      if (!word.includes(letter)) return false;
      if (notAt.some(p => word[p] === letter)) return false;
    }
+
+   // Gray: for each gray letter, work out the exact confirmed count of that
+   // letter (from greens + yellows). The word must not contain MORE than that
+   // confirmed count. If confirmed count is 0, the word must not contain it at all.
    for (const l of grays) {
-     const keep = Object.values(greens).includes(l) || yellows.some(y => y.letter === l);
-     if (!keep && word.includes(l)) return false;
+     const confirmedCount =
+       Object.values(greens).filter(g => g === l).length +
+       yellows.filter(y => y.letter === l).length;
+     const wordCount = word.split('').filter(c => c === l).length;
+     if (wordCount > confirmedCount) return false;
    }
  }
  return true;
@@ -429,22 +447,54 @@ function chip(word, cls, top) {
  return d;
 }
 
+// Collect all letters already known to be in the word (green or yellow
+// across all entered constraints). We must never gray these out.
+function knownLetters() {
+ const known = new Set();
+ for (const c of constraints) {
+   Object.values(c.greens).forEach(l => known.add(l));
+   c.yellows.forEach(y => known.add(y.letter));
+ }
+ return known;
+}
+
+// If this word is wrong, all other pool words remain as possibilities.
+function remainingIfWrong(guessWord, pool) {
+ return pool.length - 1;
+}
+
 function solve() {
- const ch = COMMON.filter(wordOk).sort();
+ const ch = COMMON.filter(wordOk);
  const rh = RARE.filter(wordOk).sort();
  const rs = document.getElementById('results-sec');
  rs.innerHTML = '';
+
+ // Common — score each word by how many remain if it's wrong, sort ascending
+ const scored = ch.map(w => ({ w, rem: remainingIfWrong(w, ch) }));
+ scored.sort((a, b) => a.rem - b.rem || a.w.localeCompare(b.w));
 
  // Common
  const cg = document.createElement('div'); cg.className = 'res-group';
  const chdr = document.createElement('div'); chdr.className = 'res-header';
  chdr.innerHTML = `<div class="sec-label g">Common words</div><div class="match-ct">${ch.length} match${ch.length!==1?'es':''}</div>`;
  cg.appendChild(chdr);
- if (!ch.length) {
+ if (!scored.length) {
    const nm = document.createElement('div'); nm.className='no-match'; nm.textContent='None — check tile colours'; cg.appendChild(nm);
  } else {
    const gr = document.createElement('div'); gr.className='word-grid';
-   ch.forEach((w,i) => gr.appendChild(chip(w,'common',i===0)));
+   scored.forEach(({w, rem}, i) => {
+     const d = document.createElement('div');
+     d.className = 'chip common' + (i === 0 ? ' top' : '');
+     const wordSpan = document.createElement('span');
+     wordSpan.textContent = w.toUpperCase();
+     d.appendChild(wordSpan);
+     if (i === 0) { const s = document.createElement('span'); s.className='star'; s.textContent='★'; d.appendChild(s); }
+     const remSpan = document.createElement('span');
+     remSpan.className = 'rem-count';
+     remSpan.textContent = rem;
+     d.appendChild(remSpan);
+     gr.appendChild(d);
+   });
    cg.appendChild(gr);
  }
  rs.appendChild(cg);
