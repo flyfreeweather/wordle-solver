@@ -10,7 +10,7 @@
 <meta name="description" content="Algorithmic Wordle solver — works offline">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Ians Wordle Solver</title>
+<title>Wordle Solver</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -167,20 +167,12 @@ button:active { opacity: 0.7; }
 .chip {
  border-radius: 5px; padding: 7px 10px;
  font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
- display: inline-flex; align-items: center; gap: 6px;
 }
 .chip.common     { background: #1a1a1b; border: 1px solid #3a3a3a; color: #ddd; }
 .chip.common.top { background: #1b2e1b; border-color: #538d4e; color: #7dd87a; }
 .chip.rare       { background: #1c1a10; border: 1px solid #3a3218; color: #c9a840; }
-.star { font-size: 10px; color: #7dd87a; letter-spacing: 0; }
+.star { font-size: 10px; color: #7dd87a; letter-spacing: 0; margin-left: 2px; }
 .no-match { font-size: 13px; color: #e74c3c; }
-.rem-count {
- font-size: 11px; font-weight: 600; letter-spacing: 0;
- color: #555; background: #0d0d0e;
- border-radius: 3px; padding: 1px 5px;
- min-width: 20px; text-align: center; flex-shrink: 0;
-}
-.chip.common.top .rem-count { color: #4a8a49; background: #0a130a; }
 
 @media (min-width: 500px) {
  .tile { width: 62px; height: 62px; }
@@ -190,7 +182,7 @@ button:active { opacity: 0.7; }
 </head>
 <body>
 
-<h1>Ians Wordle Solver</h1>
+<h1>Wordle Solver</h1>
 <div class="word-count" id="wc"></div>
 
 <div class="instructions">
@@ -447,54 +439,49 @@ function chip(word, cls, top) {
  return d;
 }
 
-// Collect all letters already known to be in the word (green or yellow
-// across all entered constraints). We must never gray these out.
-function knownLetters() {
- const known = new Set();
- for (const c of constraints) {
-   Object.values(c.greens).forEach(l => known.add(l));
-   c.yellows.forEach(y => known.add(y.letter));
- }
- return known;
+// Priority order for each position (most common letters first)
+const POS_PRIORITY = [
+ 'scbtapfmgrdlwheVnoiukqjyzx',           // pos 0 (1st letter)
+ 'aorelIuhntpwcmdybsxvkgfqzj',           // pos 1 (2nd letter)
+ 'aioerunTlsdgmpvcbyfkwxzhJq',           // pos 2 (3rd letter)
+ 'ensriAlctougdmkpvfwhzbjxyq',           // pos 3 (4th letter)
+ 'eytrlndhkaopsgmcfwbixzujqv',           // pos 4 (5th letter)
+].map(s => s.toLowerCase().split(''));
+
+function wordScore(word) {
+ // Build a score as a tuple of 5 values (pos 4 first as highest priority)
+ // Lower index in priority list = better = lower score number
+ return [4, 0, 2, 3, 1].map(pos => {
+   const idx = POS_PRIORITY[pos].indexOf(word[pos]);
+   return idx === -1 ? 99 : idx;
+ });
 }
 
-// If this word is wrong, all other pool words remain as possibilities.
-function remainingIfWrong(guessWord, pool) {
- return pool.length - 1;
+function compareWords(a, b) {
+ const sa = wordScore(a);
+ const sb = wordScore(b);
+ for (let i = 0; i < sa.length; i++) {
+   if (sa[i] !== sb[i]) return sa[i] - sb[i];
+ }
+ return a.localeCompare(b);
 }
 
 function solve() {
- const ch = COMMON.filter(wordOk);
+ const ch = COMMON.filter(wordOk).sort(compareWords);
  const rh = RARE.filter(wordOk).sort();
  const rs = document.getElementById('results-sec');
  rs.innerHTML = '';
-
- // Common — score each word by how many remain if it's wrong, sort ascending
- const scored = ch.map(w => ({ w, rem: remainingIfWrong(w, ch) }));
- scored.sort((a, b) => a.rem - b.rem || a.w.localeCompare(b.w));
 
  // Common
  const cg = document.createElement('div'); cg.className = 'res-group';
  const chdr = document.createElement('div'); chdr.className = 'res-header';
  chdr.innerHTML = `<div class="sec-label g">Common words</div><div class="match-ct">${ch.length} match${ch.length!==1?'es':''}</div>`;
  cg.appendChild(chdr);
- if (!scored.length) {
+ if (!ch.length) {
    const nm = document.createElement('div'); nm.className='no-match'; nm.textContent='None — check tile colours'; cg.appendChild(nm);
  } else {
    const gr = document.createElement('div'); gr.className='word-grid';
-   scored.forEach(({w, rem}, i) => {
-     const d = document.createElement('div');
-     d.className = 'chip common' + (i === 0 ? ' top' : '');
-     const wordSpan = document.createElement('span');
-     wordSpan.textContent = w.toUpperCase();
-     d.appendChild(wordSpan);
-     if (i === 0) { const s = document.createElement('span'); s.className='star'; s.textContent='★'; d.appendChild(s); }
-     const remSpan = document.createElement('span');
-     remSpan.className = 'rem-count';
-     remSpan.textContent = rem;
-     d.appendChild(remSpan);
-     gr.appendChild(d);
-   });
+   ch.forEach((w, i) => gr.appendChild(chip(w, 'common', i === 0)));
    cg.appendChild(gr);
  }
  rs.appendChild(cg);
