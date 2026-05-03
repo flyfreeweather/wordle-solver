@@ -185,6 +185,100 @@ font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercas
 .tile { width: 62px; height: 62px; }
 .tile-letter { font-size: 28px; }
 }
+
+/* ── Landscape mode — scale everything to fill full width ── */
+@media (orientation: landscape) {
+body { padding: 12px 24px 40px; }
+h1 { font-size: clamp(24px, 4vw, 36px); }
+.word-count { font-size: 15px; }
+.instructions { max-width: 90vw !important; font-size: 15px; }
+.tile-row { gap: 10px; }
+.tile { width: 64px; height: 64px; }
+.tile-letter { font-size: 30px; }
+.btn-row { gap: 12px; }
+button { font-size: 15px; padding: 13px 24px; }
+#guesses-sec, #results-sec { max-width: 90vw !important; }
+#info-panel { max-width: 90vw !important; width: 90vw !important; }
+.info-section { font-size: 26px; line-height: 1.7; padding: 24px 24px 20px; max-width: 100%; }
+.chip { font-size: 15px; padding: 8px 14px; }
+.sec-label { font-size: 13px; }
+.match-ct { font-size: 13px; }
+.mt { width: 48px; height: 48px; font-size: 22px; }
+.info-heading { font-size: 22px; letter-spacing: 3px; }
+.info-subheading { font-size: 20px; }
+.info-section li { margin-bottom: 10px; }
+#btn-dismiss { font-size: 18px; padding: 16px 24px; max-width: 90vw !important; width: 90vw !important; }
+}
+
+/* ── Info panel ── */
+#info-panel {
+width: 100%;
+max-width: 380px;
+margin-top: 28px;
+padding-bottom: 20px;
+box-sizing: border-box;
+}
+.info-section {
+background: #1a1a1b;
+border: 1px solid #2a2a2c;
+border-radius: 10px;
+padding: 18px 18px 14px;
+margin-bottom: 14px;
+font-size: 26px;
+color: #bbb;
+line-height: 1.75;
+}
+.info-heading {
+font-size: 22px;
+font-weight: 700;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: #fff;
+margin-bottom: 10px;
+}
+.info-subheading {
+font-size: 20px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+margin: 12px 0 4px;
+}
+.excl-colour { color: #9b8ec4; }
+.g-colour    { color: #6abf69; }
+.y-colour    { color: #d4b84a; }
+.info-section p { margin-bottom: 8px; }
+.info-section p:last-child { margin-bottom: 0; }
+.info-section ul, .info-section ol {
+padding-left: 22px;
+margin: 6px 0 8px;
+}
+.info-section li { margin-bottom: 8px; }
+.info-highlight {
+background: #121213;
+border-left: 3px solid #538d4e;
+padding: 10px 14px;
+border-radius: 0 6px 6px 0;
+color: #ccc;
+font-style: italic;
+margin-top: 10px;
+}
+#btn-dismiss {
+width: 100%;
+max-width: 380px;
+background: #538d4e;
+color: #fff;
+border: none;
+border-radius: 8px;
+padding: 16px 20px;
+font-family: inherit;
+font-size: 18px;
+font-weight: 700;
+letter-spacing: 2px;
+text-transform: uppercase;
+cursor: pointer;
+touch-action: manipulation;
+margin-top: 4px;
+}
 </style>
 
 </head>
@@ -232,6 +326,66 @@ font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercas
 </div>
 
 <div id="results-sec"></div>
+
+<div id="info-panel">
+ <div class="info-section">
+   <div class="info-heading">Who Is This For?</div>
+   <p>Have you ever finished a Wordle and wondered — <em>how did someone else get it in three guesses when it took you six?</em> You're not alone. Behind every fast solver is a strategy: a feel for which letters appear most often, which positions they favour, and how to extract the most information from every single guess. This app was built to help you develop exactly that.</p>
+   <p>You might be someone who:</p>
+   <ul>
+     <li>Plays Wordle every day and wants to stop feeling stuck — you know the answer is <em>in there somewhere</em>, but you can't quite nail it down before the tiles run out</li>
+     <li>Is curious about the logic behind expert Wordle players and wants to understand <em>why</em> certain opening words are better than others</li>
+     <li>Loves words and wants to discover five-letter gems you've never come across — from everyday vocabulary to the wonderfully obscure corners of the English language</li>
+     <li>Is looking for a gentle but genuinely effective way to keep your brain sharp — the kind of daily mental workout that builds pattern recognition, lateral thinking, and linguistic intuition over time</li>
+     <li>Wants to improve problem-solving skills: learning to eliminate possibilities systematically, make decisions under uncertainty, and think several moves ahead</li>
+     <li>Is recovering from illness, managing cognitive health, or simply believes — as the science suggests — that regularly challenging your brain with language and logic helps maintain and improve its function</li>
+     <li>Teaches or learns English and wants an engaging tool that exposes you to a rich and varied vocabulary in a game context that makes words stick</li>
+   </ul>
+   <p class="info-highlight">This app doesn't just give you the answer — it teaches you <em>how to think</em>. Use it alongside your game, not instead of it, and you'll find yourself needing it less and less as the strategies become second nature.</p>
+ </div>
+
+ <div class="info-section">
+   <div class="info-heading">Features</div>
+   <ul>
+     <li><strong>Algorithmic solving</strong> — filters all constraints simultaneously with guaranteed accurate results</li>
+     <li><strong>Three result groups</strong> — exclusion probe words, common words, and less common words</li>
+     <li><strong>Positional frequency sorting</strong> — common words ranked by statistical letter frequency per position</li>
+     <li><strong>Exclusion word suggestions</strong> — probe words that test the most informative untested letters</li>
+     <li><strong>Duplicate letter handling</strong> — correctly handles words like BROOM where one letter appears twice</li>
+     <li><strong>Works fully offline</strong> — cached on first load, auto-updates silently in the background</li>
+     <li><strong>Completely self-contained</strong> — all word lists embedded in the app, nothing fetched at runtime</li>
+   </ul>
+ </div>
+
+ <div class="info-section">
+   <div class="info-heading">Result Groups</div>
+   <div class="info-subheading excl-colour">Exclusion Words</div>
+   <p>Shown first. Strategic probe guesses designed to eliminate as many remaining candidates as possible. Not necessarily the answer — use these when several matches remain and you need more information.</p>
+   <div class="info-subheading g-colour">Common Words</div>
+   <p>Primary NYT-style answers matching your constraints, sorted by positional letter frequency. The top pick (★) is statistically the strongest next guess.</p>
+   <div class="info-subheading y-colour">Less Common Words</div>
+   <p>Valid but less likely NYT answers matching your constraints.</p>
+ </div>
+
+ <div class="info-section">
+   <div class="info-heading">Exclusion Word Logic</div>
+   <ol>
+     <li><strong>Identify tested letters</strong> — every letter used across all entered guesses is collected, regardless of result colour</li>
+     <li><strong>Score untested letters</strong> — each untested letter is scored by how many current common matches contain it. A letter in 4 of 5 remaining words scores 4</li>
+     <li><strong>Build candidate pool</strong> — words from all three word lists are filtered to keep only those using zero tested letters and zero repeated letters</li>
+     <li><strong>Score and rank</strong> — each candidate is scored by the sum of its unique letter values. A word covering 5 high-value untested letters scores highest</li>
+     <li><strong>Return top 3</strong> — the three highest-scoring candidates are shown, the top pick (★) covering the most informative untested letters</li>
+   </ol>
+ </div>
+
+ <div class="info-section">
+   <div class="info-heading">Constraint Logic</div>
+   <p>The solver correctly handles duplicate letters. When a letter appears as both gray and yellow or green — for example guessing BROOM when the answer has only one O — the confirmed count of that letter is calculated from greens and yellows. Any word containing that letter more times than the confirmed count is eliminated. This prevents false positives like CROOK appearing as a match after BROOM.</p>
+ </div>
+
+<button id="btn-dismiss" onclick="dismissInfo()">Got it — Start Solving →</button>
+
+</div>
 
 <script>
 // ── Word lists ───────────────────────────────────────────────────────────────
@@ -405,9 +559,8 @@ function renderGuesses() {
      constraints.splice(ci, 1);
      renderGuesses();
      document.getElementById('results-sec').innerHTML = '';
+     document.getElementById('btn-reset').style.display = 'none';
      if (!constraints.length) {
-       document.getElementById('btn-solve').style.display = 'none';
-       document.getElementById('btn-reset').style.display = 'none';
        document.getElementById('guesses-sec').style.display = 'none';
      }
    });
@@ -483,7 +636,7 @@ function solve() {
  const rs = document.getElementById('results-sec');
  rs.innerHTML = '';
 
- // Common
+ // Build all three sections but append in order: excl, common, rare
  const cg = document.createElement('div'); cg.className = 'res-group';
  const chdr = document.createElement('div'); chdr.className = 'res-header';
  chdr.innerHTML = `<div class="sec-label g">Common words</div><div class="match-ct">${ch.length} match${ch.length!==1?'es':''}</div>`;
@@ -495,18 +648,17 @@ function solve() {
    ch.forEach((w, i) => gr.appendChild(chip(w, 'common', i === 0)));
    cg.appendChild(gr);
  }
- rs.appendChild(cg);
 
- // Less common
+ // Less common — build but hold
+ let rg = null;
  if (rh.length) {
-   const rg = document.createElement('div'); rg.className='res-group';
+   rg = document.createElement('div'); rg.className='res-group';
    const rhdr = document.createElement('div'); rhdr.className='res-header';
    rhdr.innerHTML = `<div class="sec-label y">Less common</div><div class="match-ct">${rh.length} match${rh.length!==1?'es':''}</div>`;
    rg.appendChild(rhdr);
    const gr = document.createElement('div'); gr.className='word-grid';
    rh.forEach(w => gr.appendChild(chip(w,'rare',false)));
    rg.appendChild(gr);
-   rs.appendChild(rg);
  }
 
  if (!ch.length && !rh.length) {
@@ -584,6 +736,13 @@ function solve() {
      rs.appendChild(eg);
    }
  }
+
+ // Append common and rare after exclusion
+ rs.appendChild(cg);
+ if (rg) rs.appendChild(rg);
+
+ // Show reset as soon as results are displayed
+ document.getElementById('btn-reset').style.display = 'inline-block';
 }
 
 // ── Reset ──────────────────────────────────────────────────────────────────────
@@ -596,6 +755,7 @@ function reset() {
  document.getElementById('results-sec').innerHTML = '';
  document.getElementById('guesses-sec').style.display = 'none';
  document.getElementById('btn-reset').style.display = 'none';
+ document.getElementById('info-panel').style.display = 'block';
  setTimeout(() => focusTile(0), 50);
 }
 
@@ -612,6 +772,31 @@ wireBtn('btn-reset', reset);
 // ── Init ───────────────────────────────────────────────────────────────────────
 renderTiles();
 setTimeout(() => focusTile(0), 100);
+
+// ── Info panel — show on every fresh page load ─────────────────────────────────
+// Use sessionStorage so it shows again on refresh but not within the same session
+// after dismissal (unless they reload)
+function dismissInfo() {
+ document.getElementById('info-panel').style.display = 'none';
+ sessionStorage.setItem('infoDismissed', '1');
+}
+
+// Always show on load (sessionStorage clears on tab close / refresh)
+document.getElementById('info-panel').style.display = 'block';
+
+// ── Landscape: update viewport meta to prevent clipping ────────────────────────
+function updateViewport() {
+ const meta = document.querySelector('meta[name="viewport"]');
+ if (window.innerWidth > window.innerHeight) {
+   // Landscape — allow page to scale to full width
+   meta.content = 'width=device-width, initial-scale=1.0, user-scalable=no';
+ } else {
+   // Portrait — lock scale
+   meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+ }
+}
+window.addEventListener('orientationchange', () => setTimeout(updateViewport, 100));
+updateViewport();
 
 // ── Register service worker for offline PWA support ────────────────────────────
 if ('serviceWorker' in navigator) {

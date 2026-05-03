@@ -4,10 +4,32 @@ A fast, algorithmic Wordle solver that runs entirely in your browser with no ser
 
 -----
 
+## Who Is This For?
+
+Have you ever finished a Wordle and wondered — *how did someone else get it in three guesses when it took you six?* You’re not alone. Behind every fast solver is a strategy: a feel for which letters appear most often, which positions they favour, and how to extract the most information from every single guess. This app was built to help you develop exactly that.
+
+**You might be someone who:**
+
+- Plays Wordle every day and wants to stop feeling stuck — you know the answer is *in there somewhere*, but you can’t quite nail it down before the tiles run out
+- Is curious about the logic behind expert Wordle players and wants to understand *why* certain opening words are better than others
+- Loves words and wants to discover five-letter gems you’ve never come across — from everyday vocabulary to the wonderfully obscure corners of the English language
+- Is looking for a gentle but genuinely effective way to keep your brain sharp — the kind of daily mental workout that builds pattern recognition, lateral thinking, and linguistic intuition over time
+- Wants to improve your problem-solving approach: learning to eliminate possibilities systematically, make decisions under uncertainty, and think several moves ahead
+- Is recovering from illness, managing cognitive health, or simply believes — as the science suggests — that regularly challenging your brain with language and logic helps maintain and improve its function
+- Teaches or learns English and wants an engaging tool that exposes you to a rich and varied vocabulary in a game context that makes words stick
+
+**What makes this different from just looking up the answer?**
+
+This app doesn’t just give you the answer — it teaches you *how to think*. By showing you which words are statistically strongest given what you know, which letters to test next, and how to probe the remaining possibilities efficiently, it builds the kind of intuition that makes you genuinely better at Wordle over time. Use it alongside your game, not instead of it, and you’ll find yourself needing it less and less — because the strategies it reveals become second nature.
+
+Think of it as having a thoughtful friend who happens to know a lot about words leaning over your shoulder — not to spoil the puzzle, but to help you see it more clearly.
+
+-----
+
 ## Features
 
 - **Algorithmic solving** — filters against all constraints simultaneously with guaranteed accurate results
-- **Three result groups** — common words, less common words, and exclusion probe words
+- **Three result groups** — exclusion probe words, common words, and less common words
 - **Positional frequency sorting** — common words sorted by statistical letter frequency per position
 - **Exclusion word suggestions** — probe words that test the most informative untested letters
 - **Duplicate letter constraint handling** — correctly handles words like BROOM where one letter appears twice
@@ -33,17 +55,28 @@ A fast, algorithmic Wordle solver that runs entirely in your browser with no ser
 
 ## Result Groups
 
+### Exclusion Words (purple)
+
+Shown first. Probe words to use when several common matches remain and you need more information before committing to a final answer. These are not necessarily the answer — they are strategic guesses designed to eliminate as many remaining candidates as possible in one guess.
+
 ### Common Words (green)
 
 Words from the primary NYT-style answer list that match all your constraints. Sorted by positional letter frequency — the top-ranked word (marked ★) is statistically the strongest next guess based on where letters most commonly appear in Wordle answers.
 
+Sorting priority order by position:
+
+|Priority|Position 5|Position 1|Position 3|Position 4|Position 2|
+|--------|----------|----------|----------|----------|----------|
+|1st     |E         |S         |A         |E         |A         |
+|2nd     |Y         |C         |I         |N         |O         |
+|3rd     |T         |B         |O         |S         |R         |
+|4th     |R         |T         |E         |R         |E         |
+|5th     |L         |A         |R         |I         |L         |
+|…       |…         |…         |…         |…         |…         |
+
 ### Less Common Words (amber)
 
 Words from a secondary list that match all constraints. Valid Wordle answers but less likely to be chosen by NYT.
-
-### Exclusion Words (purple)
-
-Probe words to use when several common matches remain and you need more information before committing to a final answer. These are not necessarily the answer — they are strategic guesses designed to eliminate as many remaining candidates as possible in one guess.
 
 -----
 
@@ -83,53 +116,16 @@ The solver correctly handles duplicate letters. When a letter appears as both gr
 This prevents false positives like CROOK appearing as a match after BROOM has established there is only one O.
 
 -----
-## Result Sort Order
 
-All three word groups are sorted using the same algorithm, which ranks words by how common each of their letters is in that specific position across real Wordle answers. The sort evaluates positions in this priority order: **5th → 1st → 3rd → 4th → 2nd**.
-
-Position 5 (the final letter) is weighted most heavily because it has the strongest letter frequency signal — a small set of letters (e, y, t, r, l, n, d, h…) accounts for the vast majority of word endings. Position 2 carries the least weight.
-
-Within each position, letters are ranked from most to least frequent:
-
-| Position | Letter frequency order (most → least common) |
-|----------|----------------------------------------------|
-| 1st      | s, c, b, t, a, p, f, m, g, r, d, l, w, h, e, n, o, i, u, k, … |
-| 2nd      | a, o, r, e, l, u, h, n, t, p, w, c, m, d, y, b, s, x, v, k, … |
-| 3rd      | a, i, o, e, r, u, n, l, s, d, g, m, p, v, c, b, y, f, k, w, … |
-| 4th      | e, n, s, r, i, l, c, t, o, u, g, d, m, k, p, v, f, w, h, z, … |
-| 5th      | e, y, t, r, l, n, d, h, k, a, o, p, s, g, m, c, f, w, b, i, … |
-
-Words whose letters rank highly across all five positions — particularly at positions 5 and 1 — will appear at the top of each group. This means the first suggestion in the common words list is generally the strongest next guess given everything the solver knows so far.
-
------
 ## Installing on iPhone
 
-1. Open the app URL in Safari (not tested with Chrome or Firefox) https://flyfreeweather.github.io/wordle-solver/
-1. Tap the three ... (bottom right)
-1. Tap the Share button (box with arrow pointing up)
-1. Tap View More (bottom right down arrow)
-1. Tap Add to Home Screen
-1. Select 'Open as Web App'
-1. Tap Add
+1. Open the app URL in **Safari** (not Chrome)
+1. Tap the **Share** button
+1. Tap **Add to Home Screen**
+1. Tap **Add**
 
 The app appears on your home screen with the WS icon and opens full-screen. It works completely offline after the first visit and updates itself automatically in the background when a new version is deployed.
 
------
-## Installing on Mac
-
-1. Open the app URL in Brave (not tested with Safari, Chrome or Firefox)
- https://flyfreeweather.github.io/wordle-solver/ 
-1. Tap the hanburger menu (top right)
-1. Tap the **Save and Share**
-1. Tap **Install Wordle Solver**
-1. In the **Install app** window Tap **Install**
-1. It is now in Applications
------
-
-## Deleting from Mac
-1. Open the Wordle Solver from **Launchpad**
-1. Tap the hamburger menu (Top right)
-1. Tap **Uninstall Wordle Solver**
 -----
 
 ## Files
@@ -152,16 +148,14 @@ Three embedded word lists, all stored inside `index.html` with no runtime fetchi
 |-----------|------------|-------------------------------------------------------------------|
 |Common     |~1,993 words|Primary NYT-style answers, shown in green                          |
 |Less common|~1,207 words|Valid but unlikely answers, shown in amber                         |
-|Obscure    |~1,648 words|Unusual letter combinations used only as exclusion probe candidates|
+|Obscure    |~900 words  |Unusual letter combinations used only as exclusion probe candidates|
 
 -----
 
 ## Hosted on GitHub Pages
 
-The live app is available at:
-
 ```
-https://flyfreeweather.github.io/wordle-solver/
+https://flyfreeweather.github.io/wordle-solver
 ```
 
 -----
