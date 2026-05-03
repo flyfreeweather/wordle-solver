@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -15,14 +16,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
- background: #121213;
- color: #fff;
- font-family: 'Courier New', Courier, monospace;
- min-height: 100vh;
- display: flex;
- flex-direction: column;
- align-items: center;
- padding: 14px 16px 40px;
+background: #121213;
+color: #fff;
+font-family: ‘Courier New’, Courier, monospace;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 14px 16px 40px;
 }
 
 .eyebrow { font-size: 11px; letter-spacing: 6px; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
@@ -30,11 +31,14 @@ h1 { font-size: clamp(22px, 5vw, 30px); font-weight: 900; letter-spacing: 5px; t
 .word-count { font-size: 13px; color: #aaa; letter-spacing: 1px; margin-bottom: 14px; }
 
 .instructions {
- background: #1a1a1b; border: 1px solid #2a2a2c; border-radius: 10px;
- padding: 12px 16px; margin-bottom: 16px; width: 100%; max-width: 340px;
- font-size: 14px; color: #ccc; line-height: 1.75;
+background: #1a1a1b; border: 1px solid #2a2a2c; border-radius: 10px;
+padding: 12px 16px; margin-bottom: 16px; width: 100%; max-width: 340px;
+font-size: 14px; color: #ccc; line-height: 1.75;
 }
 .instructions .lbl { color: #fff; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+.instructions .lbl-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.help-link { font-size: 12px; color: #b59f3b; text-decoration: none; font-weight: 600; letter-spacing: 1px; }
+.help-link:hover { color: #d4b84a; }
 .color-legend { display: flex; gap: 8px; align-items: center; margin: 4px 0; flex-wrap: wrap; }
 .pip { border-radius: 3px; padding: 2px 8px; font-size: 12px; color: #fff; display: inline-block; }
 .pip.gray   { background: #555558; }
@@ -46,88 +50,88 @@ h1 { font-size: clamp(22px, 5vw, 30px); font-weight: 900; letter-spacing: 5px; t
 .tile-row { display: flex; gap: 8px; margin-bottom: 6px; }
 
 .tile {
- width: 56px; height: 56px; border-radius: 7px;
- border: 2px solid #565758; background: #3a3a3c;
- display: flex; align-items: center; justify-content: center;
- position: relative; flex-shrink: 0;
- transition: background 0.12s, border-color 0.12s;
- /* iOS: ensure touch events reach the tile not just the input */
- touch-action: manipulation;
+width: 56px; height: 56px; border-radius: 7px;
+border: 2px solid #565758; background: #3a3a3c;
+display: flex; align-items: center; justify-content: center;
+position: relative; flex-shrink: 0;
+transition: background 0.12s, border-color 0.12s;
+/* iOS: ensure touch events reach the tile not just the input */
+touch-action: manipulation;
 }
 .tile.g  { background: #538d4e; border-color: #538d4e; }
 .tile.y  { background: #b59f3b; border-color: #b59f3b; }
 .tile.gr { background: #555558; border-color: #555558; }
 
 /*
- Key iOS fix: we use a hidden real input for each tile but display
- a visible letter div on top. The input is invisible but focusable.
+Key iOS fix: we use a hidden real input for each tile but display
+a visible letter div on top. The input is invisible but focusable.
 */
 .tile input {
- position: absolute;
- inset: 0;
- width: 100%;
- height: 100%;
- opacity: 0;           /* invisible but present and focusable */
- border: none;
- outline: none;
- background: transparent;
- font-size: 16px;      /* prevents iOS zoom on focus */
- cursor: pointer;
- -webkit-appearance: none;
- border-radius: 0;
- caret-color: transparent;
- color: transparent;
- z-index: 2;
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+opacity: 0;           /* invisible but present and focusable */
+border: none;
+outline: none;
+background: transparent;
+font-size: 16px;      /* prevents iOS zoom on focus */
+cursor: pointer;
+-webkit-appearance: none;
+border-radius: 0;
+caret-color: transparent;
+color: transparent;
+z-index: 2;
 }
 
 .tile-letter {
- position: absolute;
- inset: 0;
- display: flex;
- align-items: center;
- justify-content: center;
- font-size: 26px;
- font-weight: 900;
- color: #fff;
- text-transform: uppercase;
- pointer-events: none;
- z-index: 1;
- /* blinking cursor effect when empty and focused */
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 26px;
+font-weight: 900;
+color: #fff;
+text-transform: uppercase;
+pointer-events: none;
+z-index: 1;
+/* blinking cursor effect when empty and focused */
 }
 .tile.focused .tile-letter::after {
- content: '|';
- opacity: 1;
- animation: blink 1s step-end infinite;
+content: ‘|’;
+opacity: 1;
+animation: blink 1s step-end infinite;
 }
 .tile.focused.has-letter .tile-letter::after { display: none; }
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
 .tap-hint {
- font-size: 13px; color: #bbb; letter-spacing: 1px;
- text-transform: uppercase; margin-bottom: 14px; height: 18px;
- text-align: center;
+font-size: 13px; color: #bbb; letter-spacing: 1px;
+text-transform: uppercase; margin-bottom: 14px; height: 18px;
+text-align: center;
 }
 
 /* ── Buttons ── */
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
 
 button {
- font-family: inherit; font-size: 14px; font-weight: 700;
- letter-spacing: 2px; text-transform: uppercase;
- border: none; border-radius: 7px; padding: 12px 20px;
- cursor: pointer;
- /* iOS: prevent double-tap zoom and ensure touch events fire */
- touch-action: manipulation;
- -webkit-appearance: none;
- user-select: none;
- -webkit-user-select: none;
+font-family: inherit; font-size: 14px; font-weight: 700;
+letter-spacing: 2px; text-transform: uppercase;
+border: none; border-radius: 7px; padding: 12px 20px;
+cursor: pointer;
+/* iOS: prevent double-tap zoom and ensure touch events fire */
+touch-action: manipulation;
+-webkit-appearance: none;
+user-select: none;
+-webkit-user-select: none;
 }
 button:active { opacity: 0.7; }
 
 #btn-add        { background: #1c1c1d; color: #666; }
 #btn-add.active { background: #538d4e; color: #fff; }
-#btn-solve      { background: #b59f3b; color: #fff; display: none; }
+#btn-solve      { background: #b59f3b; color: #fff; }
 #btn-reset      { background: transparent; color: #aaa; border: 1px solid #555; display: none; }
 
 /* ── Guesses ── */
@@ -140,10 +144,10 @@ button:active { opacity: 0.7; }
 
 .guess-row { display: flex; gap: 5px; margin-bottom: 7px; align-items: center; }
 .mt {
- width: 42px; height: 42px; border-radius: 5px;
- display: flex; align-items: center; justify-content: center;
- font-size: 20px; font-weight: 900; text-transform: uppercase;
- color: #fff; flex-shrink: 0;
+width: 42px; height: 42px; border-radius: 5px;
+display: flex; align-items: center; justify-content: center;
+font-size: 20px; font-weight: 900; text-transform: uppercase;
+color: #fff; flex-shrink: 0;
 }
 .mt.g  { background: #538d4e; }
 .mt.y  { background: #b59f3b; }
@@ -151,11 +155,11 @@ button:active { opacity: 0.7; }
 .mt.e  { background: #3a3a3c; }
 
 .rm-btn {
- background: transparent; border: none; color: #aaa;
- font-size: 26px; padding: 0 8px; cursor: pointer;
- touch-action: manipulation; -webkit-appearance: none;
- font-weight: 300; line-height: 1;
- user-select: none; -webkit-user-select: none;
+background: transparent; border: none; color: #aaa;
+font-size: 26px; padding: 0 8px; cursor: pointer;
+touch-action: manipulation; -webkit-appearance: none;
+font-weight: 300; line-height: 1;
+user-select: none; -webkit-user-select: none;
 }
 
 /* ── Results ── */
@@ -166,8 +170,8 @@ button:active { opacity: 0.7; }
 .word-grid { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .chip {
- border-radius: 5px; padding: 7px 10px;
- font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+border-radius: 5px; padding: 7px 10px;
+font-size: 14px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
 }
 .chip.common     { background: #1a1a1b; border: 1px solid #3a3a3a; color: #ddd; }
 .chip.common.top { background: #1b2e1b; border-color: #538d4e; color: #7dd87a; }
@@ -178,10 +182,11 @@ button:active { opacity: 0.7; }
 .no-match { font-size: 13px; color: #e74c3c; }
 
 @media (min-width: 500px) {
- .tile { width: 62px; height: 62px; }
- .tile-letter { font-size: 28px; }
+.tile { width: 62px; height: 62px; }
+.tile-letter { font-size: 28px; }
 }
 </style>
+
 </head>
 <body>
 
@@ -189,7 +194,10 @@ button:active { opacity: 0.7; }
 <div class="word-count" id="wc"></div>
 
 <div class="instructions">
- <div class="lbl">HOW TO USE</div>
+ <div class="lbl-row">
+   <div class="lbl">HOW TO USE</div>
+   <a class="help-link" href="https://github.com/flyfreeweather/wordle-solver/blob/main/README.md#how-to-use" target="_blank" rel="noopener">Help &#8599;</a>
+ </div>
  <div>&#x2460; Tap a box and type your guess</div>
  <div>&#x2461; <span style="color:#b59f3b;font-weight:700">Tap a filled tile</span> to cycle colour</div>
  <div class="color-legend">
@@ -201,6 +209,7 @@ button:active { opacity: 0.7; }
 </div>
 
 <!-- Tiles -->
+
 <div class="tile-row" id="tile-row">
  <div class="tile" id="t0"><input id="i0" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l0"></div></div>
  <div class="tile" id="t1"><input id="i1" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"><div class="tile-letter" id="l1"></div></div>
@@ -371,7 +380,6 @@ function addGuess() {
  renderTiles();
  renderGuesses();
  document.getElementById('results-sec').innerHTML = '';
- document.getElementById('btn-solve').style.display = 'inline-block';
  document.getElementById('btn-reset').style.display = 'inline-block';
  document.getElementById('guesses-sec').style.display = 'block';
  setTimeout(() => focusTile(0), 50);
@@ -533,7 +541,7 @@ function solve() {
 
    // 3. Build pool from common + less common + obscure words,
    //    keeping only words with NO tested letters and NO repeated letters
-   const OBSCURE = `bemix clipt cofix crwth djibb expwy fjord glyph grosz immix japan jumby kempt klutz lymph morph myrrh nymph phpht psych pygmy rhumb scyth squib squiz thymy tryst unbox vozhd waqfs zincy zineb zimbi zoeae zoeal zoeae kopje vibex vughy wicca khadj kanjis xylyl`.split(/\s+/).filter(w => w.length === 5);
+   const OBSCURE = `AALII ABACA ABAFT ABAMP ABEAM ABELE ABMHO ABOHM ABYSM ACARI ACCEL ACERB ACINI ACTIN ADDAX ADMAN ADMEN ADMIX ADOWN ADUST AECIA AEDES AERON AFRIT AGAMA AGGER AGGIE AGGRO AGIST AGLET AGLEY AGONE AGRIC AGRON AITCH AKENE ALACK ALARY ALATE ALDOL ALEPH ALGAL ALGID ALGIN ALGOR ALKYD ALKYL ALLEE ALLYL ALOIN ALULA AMAHS AMAIN AMBRY AMENT AMICE AMIDE AMINE AMNIO ANCON ANEAR ANELE ANENT ANILE ANION ANKHS ANKUS ANTIQ ANTRE APEAK APERY APHIS APIAN APISH APORT APPEL APSIS APTER ARCHT ARDEB AREAL ARECA ARETE ARGAL ARGIL ARGOL ARIEL ARMET AROID ARRAS ARRIS ARSED ARSIS ARTEL ASCUS ASDIC ASSAI ASSOC ATILT ATMAN ATOMY ATONY ATRIP ATTAR AUGHT AULIC AULOS AURAR AURIC AURUM AUXIN AVENS AVOIR AYAHS AZIDE AZINE AZOIC AZOLE AZOTE BABUL BACCY BAIRN BAIZA BAIZE BALAS BALLS BALLY BANNS BARDE BARIC BARIT BARMY BARYE BASSO BATHS BAZAR BEAMY BEANO BEDEL BEDEW BEDIM BEERY BEGUM BELGA BENNE BENNY BESOM BETHS BETTA BEVVY BHAJI BHANG BIALY BIELD BIFID BIGHT BIJOU BILBO BIMAH BIMBO BINAL BIOTA BITCH BLAHS BLAIN BLATE BLEAR BLINI BLOWY BLUET BLUEY BOART BODGE BOGLE BOGON BOINK BOMBE BONCE BONNE BONZE BOONG BORAK BORER BOSKY BOTEL BOTHY BOUSE BOVID BOWSE BOYAR BOYLA BRACH BRACT BRAIL BRANT BRAXY BRAZE BREDE BRENT BREVE BRILL BROCH BROCK BROSE BRUIT BRUME BUBAL BUBBA BUCKO BUENO BUFFO BULLA BUMPH BUNCO BURAN BURBS BURET BURGH BURIN BURKE BURRY BURSE BUSBY BUTEO BUTTY BUTUT BUTYL BWANA CABOB CAIRD CALLA CALYX CAMPO CANER CANNA CANSO CANST CANTO CANTS CANTY CARBS CARPI CARSE CAUDA CAVIE CECAL CECUM CEDER CEIBA CELLA CELOM CENSE CENTO CENTS CEORL CERIA CERIC CESAR CESTA CHAPE CHARE CHARR CHELA CHERT CHEVY CHIAO CHICO CHIMB CHINE CHINK CHIRK CHIRM CHIRR CHIVY CHOLI CHOOK CHRON CHUFA CHUFF CHURR CHYLE CHYME CIMEX CIRRI CISCO CLARO CLARY CLAVI CLEEK CLEPE CLINE CLOMB CLONK CLVII CLXII CLXIV CLXIX CLXVI COACT COALY COBIA COBLE COCCI CODON COGON COIGN COLEY COLLY COLZA COMBE COMDG COMPO CONTD CONTE CONTO COOEE COOMB COPAL COPRA CORIA CORNU CORSE COSEC COSET COSTA COSTE COTTA COVIN COXAE COYPU COZEN CRAAL CRAKE CRAPE CRAPS CRAPY CREEL CRINE CROFT CRONK CRORE CROZE CRUCK CRUFT CRUSE CRWTH CRYST CUBEB CUBER CUDDY CULCH CULET CULEX CULLY CULPA CUPEL CUPPA CURCH CURDY CURET CURIE CUSEC CUTCH CUTEY CUTIN CUTIS CUTTY CYCAD CYLIX CYMAR CYTON DAMAN DAMAR DANIO DARER DARIC DARKY DAUBE DAVIT DDING DEARY DEBAG DEBUS DEDAL DEKKO DELFT DEMIT DENAR DENOM DERIV DERMA DERRY DEWAN DHOBI DHOLE DHOTI DIAZO DICES DICOT DICTA DIDST DIGHT DILDO DINAR DINGE DIPSO DIWAN DIXIE DIZEN DOBBY DOBLA DOBRA DOBRO DOGGO DOGIE DOLCE DOLOR DONEE DONGA DONNA DONNE DORTY DOTER DOUCE DOUMA DOWER DOWIE DOYEN DRAFF DREAR DREGS DRUPE DRUSE DRYAD DUCAL DUCTS DULIA DULSE DUMBO DUNNO DUOMO DUPER DUPLE DUPPY DURRA DURST DURUM EAGRE EDUCT EGEST EIDOS EIKON ELAND ELEMI ELUTE ELVER ELVES EMBAY EMBOW EMBUS EMEND EMMER EMMET ENATE ENDUE ENGIN ENVOI EOSIN EPACT EPHAH EPHOD EPHOR EPODE EQUIV ERGOT EROSE ERUCT ERUGO ESKER ESTOP EVITE EXEAT EXINE EYRIR FADDY FADGE FAENA FAGOT FANGO FANNY FANON FAQIR FARAD FARCI FARCY FATSO FAUGH FAUVE FAVUS FECIT FEEZE FELID FELLY FENNY FEOFF FERIA FERMI FERNY FETOR FEUAR FICHE FICHU FIDGE FIFER FILAR FILUM FINIS FINNY FIRER FIRRY FITCH FITLY FJELD FLAWY FLEAM FLITE FLONG FLORY FLUMP FLUOR FLUTY FLYTE FOEHN FOLIA FOLIE FOOTY FORBY FORDO FORME FOSSA FOSSE FOVEA FREMD FRENA FRITH FRIZE FRONS FRORE FUBSY FUCUS FUGGY FURAN FURZE FURZY FUSEE FUSIL GADID GALAH GALEA GALOP GAMBA GAMIC GAMIN GAMMY GANEF GANJA GANOF GAPPY GAUSS GELID GEMMA GEMMY GEMOT GENES GENET GENIC GENII GENIP GENIT GENOA GENRO GENUS GEOID GERAH GESSO GHAZI GHYLL GIGOT GIGUE GIMEL GIMPY GINNY GIPON GLAIR GLANS GLARY GLEBE GLEDE GLEET GLOZE GLUME GLUON GONIF GOODS GOOSY GOPAK GORAL GOTHS GOUTY GOWAN GOYIM GREBE GRIDE GRITH GRITS GROAT GROSZ GRUME GUACO GULES GUMMA GUNGE GUNGY GUNNY GURGE GUTTA GUYOT GYPSY GYRAL GYRON GYRUS HACEK HADST HAFIZ HAJES HAJJI HAKIM HALON HAMAL HAMZA HANCE HAOLE HAUGH HAULM HAVER HAWSE HAZAN HAZER HDQRS HEDER HELOT HELVE HEMAL HEMIC HEMIN HENGE HENRY HERBY HETHS HEWER HEXAD HEXYL HIGHS HIGHT HILUM HINNY HOARS HOGAN HOICK HOKKU HONER HONKY HORAH HORAL HORME HOROL HORST HOSTA HOUGH HOURI HUMIC HUMPY HURDS HURST HYING HYOID HYPHA HYRAX HYSON IAMBI ICHOR ICTUS IHRAM ILEAC ILEAL ILEUM ILEUS ILIUM ILLUS IMAGO IMIDE IMINE IMMIX INCUS INDEF INDIC INDUC INFIN INFRA INGLE INION INKLE INNIT INSTR INURN IOCTL IODIC IRADE IRREG ISSEI ISTLE IXTLE IZARD JABOT JACAL JAGGY JAKES JALAP JAPAN JEANS JEBEL JELLO JEMMY JENNY JERID JERRY JIHAD JINGO JINNI JIVEY JOCKO JOLTY JORUM JUGAL JUGUM JUNCO JUPON JURAL JURAT JUREL JUTTY KAFIR KAIAK KALIF KALPA KANJI KANZU KAPHS KAPOK KARST KASHA KAURI KEDGE KELLY KENAF KENDO KENTE KERNE KETCH KEVEL KHEDA KHOUM KIANG KICKY KINDS KININ KLONG KLOOF KLUGE KNOUT KNURL KOINE KOPJE KORMA KRAAL KRAFT KRAIT KRAUT KRONA KRONE KROON KUKRI KULAK KURUS KVASS KYLIX LABIA LAGAN LAIRD LAKHS LAMIA LANAI LAPIN LARDY LARES LARGO LARUM LATHI LATHS LATHY LAZAR LEGES LEMAN LEMME LENIS LENTO LEONE LEPTA LETHE LEVIN LEWIS LIANA LIARD LIBRA LIGAN LIGER LIMEN LIMEY LINDY LININ LINTY LISLE LITAS LITHO LIVRE LLANO LOACH LOBAR LOCUM LODEN LOGAN LOGGY LOGIA LONGE LOOBY LOPPY LORAN LOSEL LOTIC LOUGH LOUIS LOVEY LUBRA LUDIC LUFFA LUNGI LUREX LURGY LUSHY LXVII LYNCH LYSIN LYSIS LYSSA LYTIC LYTTA MACLE MAGUS MALAR MAMEY MAMMY MANAT MANKY MANTA MANUF MARGE MARIA MARKA MASER MASSY MATIN MAUND MAVIS MAYST MEANY MEINY MELIC MERLE MESIC MESNE MESON METHS METIC METIS MIDDY MIFFY MIKVA MILCH MILIA MILIT MIMES MINGY MINKE MIRZA MISDO MITIS MNEME MOGGY MOHUR MOIRE MOLAL MONAD MONAS MONDE MONGO MONTE MORES MORSE MOTET MOTHS MOTHY MOTTE MUCIN MUCOR MUCRO MUDRA MUFTI MUJIK MULCT MULEY MULLA MULTI MUMPS MUREX MURRE MUSSY MUZAK MUZZY MYALL MYCOL MYTHS NACRE NAEVI NAIAD NAIRA NAKER NAKFA NANCE NANCY NAPPE NARES NARIS NARKY NATCH NATES NAVAR NAVIG NAVVY NAWAB NEATH NEGRO NEGUS NELLY NEPER NERAL NETTY NEUME NEVUS NEWEL NGWEE NIDUS NIFFY NIGGA NIHIL NIMBI NIMBY NINON NISEI NISUS NITER NITID NITTY NIVAL NOBBY NODDY NODUS NOHOW NONCE NONET NOOKY NORIA NOTUM NOVAE NOWAY NUBBY NUMEN NUMIS NYALA OAKUM OASES OATHS OBEAH OBELI OBJET OBOLI OCCAS OCKER OCREA OCTAD OCTAN OCULI ODEON ODEUM ODIUM OGHAM OGIVE OHMIC OLEIC OLEIN OLEUM OLOGY OMASA OMBER ONTIC OOTID OPAHS ORANG OREAD ORIEL ORLOP ORNIS ORRIS OSIER OSMIC OTTAR OUPHE OUSEL OUTTA OUZEL OVOLO OVULE OWLET OXIME PACEY PACHA PAEON PAISA PALEO PALMY PAMPA PANGA PANNE PANTO PAPPY PARES PAREU PARKY PAROL PARVE PASHA PASHM PATHS PATIN PAVAN PAVID PAVIS PAYED PEAKY PEART PEKAN PEKOE PENIS PENNA PENNI PERDU PERRY PERSE PESTY PEWEE PEWIT PHEON PHIAL PHLOX PHYLA PHYLE PICOT PICUL PIETA PILCH PILEI PINKO PINNA PINNY PINON PINTA PIPIT PIROG PITHS PITON PITTA PLAGE PLASH PLATY PLEAS PLENA PLICA PLOCE PLUMY POCKY PODDY POGEY POGGE POILU POLIT POLYS POMMY PONCE PONCY POOHS POOKA POPPA PORNO POTTO POULT PRANA PRANG PRASE PRATE PRESA PREXY PRIER PRINK PROEM PROPR PROSY PSEUD PSHAW PSOAS PUBES PUBIS PUCKA PUKKA PUNGY PUPAL PURSY PUSSY PUTTO PYOID PYXIE PZAZZ QIBLA QOPHS QUAKY QUALE QUASS QUEAN QUERN QUIFF QUINE QUINT QUIPU QUIRE QUIRT QUOIN QUOIT RACON RADIX RAGGA RAJES RAMIE RANCE RANEE RAPER RATAL RATAN RATEL RATHE RAVEL RAVIN RAZEE REATA REAVE REBEC RECCE RECTI RECTO REDAN REDYE REEKY REEST REEVE REFIX REGEX REIVE REMEX RENIN REORG REPRO RESAT RESOW REVET RHOMB RHUMB RIANT RIATA RICER RIDGY RILLE RISHI RIYAL ROBLE ROILY ROMEO RONDE RONDO ROOKY ROOSE ROQUE ROWAN ROWEL RUBEL RUCHE RUMAL RUNIC RUNTY RUSHY RUTHS RUTTY SABIN SABOT SABRA SACRA SADES SADHU SAFES SAHIB SAIGA SAITH SALEP SALMI SALOL SALPA SAMBO SAPID SAPOR SARAN SARGE SARKY SAROS SASIN SATEM SAURY SCEND SCHMO SCRAG SCROG SCUDO SCULP SCURF SCUTA SCUTE SEBUM SECCO SEDGY SEDUM SEGNO SEINE SEISE SEISM SELAH SEMEN SENNA SENOR SENTE SEPAL SEPOY SEPTA SERAI SERGE SERIN SEROW SERVO SETAE SEWAN SHAHS SHAKO SHAWM SHEND SHEWN SHIRR SHOAT SHOOL SHOTE SIBYL SICKO SIGHS SIGIL SILVA SIMAR SIMBA SISAL SIZAR SIZER SKALD SKEAN SKELP SKINK SKINT SKIRL SKIRR SKITE SKIVE SKOAL SKOSH SLATY SLAVE SLOPS SLUFF SLYPE SMALT SMAZE SMOKO SMOLT SMURF SNATH SNECK SNICK SNIPS SNOOD SNOOK SOAVE SOCLE SOFAR SOFTA SOLAN SOLDO SOLON SOLUS SONDE SONNY SOPOR SORGO SORTA SORUS SOUGH SOUSE SPAHI SPAKE SPALL SPANG SPECS SPEOS SPICA SPILE SPIRY SPITZ SPOOR SPRAG SPRAT SPRIT SPROG SPRUE SPUMY SPUTA SQUAW SRUTI STACC STAGY STANE STANG STDIO STELA STERE STICH STIPE STIRK STOAT STOOK STOPE STOSS STOUP STRIA STROP STROW STROY STULL STUPA STUPE STYLI SUCRE SUDOR SUETY SUINT SULCI SULFA SUMMA SUPPL SUPRA SURAH SURAL SURGY SURRA SUTRA SWAGE SWARD SWART SWEDE SWINK SWIZZ SYCEE SYLPH SYNOP SYSOP TABES TABLA TABOR TACET TACHE TAFIA TAIGA TAKIN TALUK TAMIS TAMMY TANKA TANSY TANTO TAPAS TAPIS TARGE TARSI TARTY TASSE TAXER TAXON TAYRA TAZZA TECHS TECHY TELEG TELEX TELIC TELLY TENCH TENGE TENIA TENNE TENNO TENON TERCE TESLA TESTA TETHS THANE THEBE THECA THEGN THEOL THERM THEWY THILL THIOL THOLE THORP THROE THUJA THUNK THUYA TICAL TIGON TILER TINCT TINEA TITCH TITTY TOILE TOKAY TOLAN TOLAR TOLLY TOLYL TONNE TONUS TOPEE TOPOG TOQUE TORII TORSE TORSK TRASS TRAVE TREAS TREEN TREWS TRINE TROAT TRONA TROTH TRULL TRYMA TUMID TUNNY TUPLE TUQUE TURFY TURPS TUSHY TUTTI TUTTY TWINK TYPAL UHLAN UKASE ULEMA ULNAE UMBEL UMIAK UNAPT UNARY UNBID UNLAY UNPEG UNPEN UNRIG UNWON UREDO URIAL UTERI VAGAL VAGUS VALSE VANDA VARIA VARIX VARUS VARVE VASTY VATIC VEDIC VEERY VEGES VELAR VELUM VENAE VENGE VENIN VERSA VERST VERTU VESTA VETCH VIAND VIBES VICED VIEWY VILLI VINIC VIREO VIRGA VIRTU VITAE VITTA VOCAB VOLAR VOLVA VOMER VOUGE VULVA WACKE WADGE WAHOO WALDO WALLY WANNA WAREZ WASHY WAZOO WEALD WEBBY WEENY WELLY WELSH WENCH WERSH WHEAL WHEEN WHELM WHIPT WHISH WHITY WHORE WHOSO WHSLE WILDS WINZE WIRER WIRRA WITHE WITHY WIZEN WOALD WODGE WOODS WOOPS WORKS WRAPS WROTH WRYER WUSSY XCVII XEBEC XENIA XERIC XEROX XTERM XVIII XXIII XXVII XXXII XXXIV XXXIX XXXVI XYLEM XYLOL YAKKA YAPOK YAPON YEAHS YENTA YIKES YOBBO YODLE YOGIC YONKS YUKKY YULAN ZAIRE ZAMIA ZAPPY ZAYIN ZAZEN ZEBEC ZIBET ZINGY ZLOTY ZOOID ZORCH ZORIL`.trim().split(/\s+/).filter(w => w.length === 5).map(w => w.toLowerCase());
    const ALL_WORDS = [...new Set([...COMMON, ...RARE, ...OBSCURE])];
 
    const exclusionPool = ALL_WORDS.filter(w => {
@@ -587,7 +595,6 @@ function reset() {
  document.getElementById('g-list').innerHTML = '';
  document.getElementById('results-sec').innerHTML = '';
  document.getElementById('guesses-sec').style.display = 'none';
- document.getElementById('btn-solve').style.display = 'none';
  document.getElementById('btn-reset').style.display = 'none';
  setTimeout(() => focusTile(0), 50);
 }
@@ -640,5 +647,6 @@ if ('serviceWorker' in navigator) {
  });
 }
 </script>
+
 </body>
 </html>
